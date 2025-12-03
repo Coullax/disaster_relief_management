@@ -74,7 +74,7 @@ export default async function Home({
           {/* Main Listings */}
           <main className="lg:col-span-3">
             {/* Tabs and Share Button */}
-            <div className="flex items-center justify-between mb-6 gap-4">
+            <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
               <div className="flex gap-2">
                 <Link href="/?type=need">
                   <button
@@ -99,7 +99,7 @@ export default async function Home({
                   </button>
                 </Link>
               </div>
-              <Button asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold">
+              <Button asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold text-[16px] h-[48px]">
                 <Link href="/create-listing" className='font-sans'>Share Your Request</Link>
               </Button>
             </div>
