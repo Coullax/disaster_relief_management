@@ -38,7 +38,7 @@ export function FilterSidebar({ currentType, currentCategory, currentSearch }: F
   }
 
   return (
-    <div className="bg-white rounded-lg p-4 space-y-4">
+    <div className="bg-white rounded-lg p-4 space-y-4 border-[#D9D9D9] border">
       {/* Search Bar */}
       <div className="pb-4 border-b">
         <label htmlFor="search" className="block text-sm font-semibold mb-2">
@@ -89,7 +89,7 @@ export function FilterSidebar({ currentType, currentCategory, currentSearch }: F
       </details>
 
       <div className="border-t pt-4">
-        {/* District Filter */}
+    
         <details className="group">
           <summary className="flex justify-between items-center cursor-pointer font-semibold text-sm">
             District
@@ -113,10 +113,9 @@ export function FilterSidebar({ currentType, currentCategory, currentSearch }: F
 
 export function InformationalCard() {
   return (
-    <div className="bg-white rounded-lg p-5 shadow-sm">
+    <div className="bg-white rounded-lg p-5 shadow-sm border-[#D9D9D9] border">
       <h3 className="font-bold text-[24px] mb-4">A Little Heads Up for Everyone</h3>
       
-      {/* Instructions for Donors */}
       <div className="mb-4">
         <h4 className="font-semibold text-sm mb-2">Instructions for Donors</h4>
         <ul className="space-y-1.5 text-xs text-gray-700 list-disc list-inside leading-relaxed">
@@ -130,7 +129,6 @@ export function InformationalCard() {
         </ul>
       </div>
 
-      {/* Instructions for Fundraisers */}
       <div>
         <h4 className="font-semibold text-sm mb-2">Instructions for Fundraisers</h4>
         <ul className="space-y-1.5 text-xs text-gray-700 list-disc list-inside leading-relaxed">
