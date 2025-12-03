@@ -6,9 +6,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useState, useEffect } from 'react'
-import { MapPin, RefreshCw, X, List } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 // Dynamically import LocationPicker to avoid SSR issues with Leaflet
@@ -19,6 +18,7 @@ const LocationPicker = dynamic(() => import('@/components/ui/location-picker'), 
 
 export default function CreateListingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedType, setSelectedType] = useState('need')
   const [autoLocation, setAutoLocation] = useState<string>('')
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
   const [locationError, setLocationError] = useState<string>('')
@@ -27,62 +27,10 @@ export default function CreateListingPage() {
   const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(null)
   const [city, setCity] = useState('')
   const [district, setDistrict] = useState('')
-
-  // We don't need textareaRef here as we access it by ID in handleBulletPoints
-  // const textareaRef = useState<HTMLTextAreaElement | null>(null)[0]
-
-  const handleBulletPoints = () => {
-    const textarea = document.getElementById('description') as HTMLTextAreaElement
-    if (!textarea) return
-
-    const cursorPos = textarea.selectionStart
-    const textBeforeCursor = description.substring(0, cursorPos)
-    const textAfterCursor = description.substring(cursorPos)
-
-    // Find the start of the current line
-    const lastNewlineBeforeCursor = textBeforeCursor.lastIndexOf('\n')
-    const currentLineStart = lastNewlineBeforeCursor + 1
-    const currentLine = textBeforeCursor.substring(currentLineStart)
-
-    // Check if current line already has a bullet
-    const trimmedLine = currentLine.trim()
-    if (trimmedLine.startsWith('•')) {
-      // If already a bullet, just add a new line with bullet
-      const newText = description.substring(0, cursorPos) + '\n• ' + textAfterCursor
-      setDescription(newText)
-
-      // Move cursor after the new bullet
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = cursorPos + 3
-        textarea.focus()
-      }, 0)
-    } else if (trimmedLine.length > 0) {
-      // Convert current line to bullet point
-      const textBeforeLine = textBeforeCursor.substring(0, currentLineStart)
-      const newText = textBeforeLine + '• ' + trimmedLine + '\n• ' + textAfterCursor
-      setDescription(newText)
-
-      // Move cursor to the new line after the bullet
-      const newCursorPos = textBeforeLine.length + trimmedLine.length + 5
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = newCursorPos
-        textarea.focus()
-      }, 0)
-    } else {
-      // Empty line, just add bullet
-      const newText = description.substring(0, cursorPos) + '• ' + textAfterCursor
-      setDescription(newText)
-
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = cursorPos + 2
-        textarea.focus()
-      }, 0)
-    }
-  }
+  const [title, setTitle] = useState('')
 
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
-      // Reverse geocoding using Nominatim API
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
         {
@@ -97,25 +45,15 @@ export default function CreateListingPage() {
       }
 
       const data = await response.json()
-
-      // Extract location information
       const address = data.address
-      console.log("address:", address)
       const locationParts = []
       let detectedCity = ''
       let detectedDistrict = ''
 
       if (address) {
-        // Include all available address components
-        if (address.house_number) {
-          locationParts.push(address.house_number)
-        }
-        if (address.road) {
-          locationParts.push(address.road)
-        }
-        if (address.suburb || address.neighbourhood) {
-          locationParts.push(address.suburb || address.neighbourhood)
-        }
+        if (address.house_number) locationParts.push(address.house_number)
+        if (address.road) locationParts.push(address.road)
+        if (address.suburb || address.neighbourhood) locationParts.push(address.suburb || address.neighbourhood)
         if (address.city || address.town || address.village) {
           const cityVal = address.city || address.town || address.village
           locationParts.push(cityVal)
@@ -123,15 +61,10 @@ export default function CreateListingPage() {
         }
         if (address.state_district) {
           locationParts.push(address.state_district)
-          // Normalize district name (remove " District" suffix and lowercase)
           detectedDistrict = address.state_district.replace(/ District$/i, '').toLowerCase()
         }
-        if (address.state) {
-          locationParts.push(address.state)
-        }
-        if (address.postcode) {
-          locationParts.push(address.postcode)
-        }
+        if (address.state) locationParts.push(address.state)
+        if (address.postcode) locationParts.push(address.postcode)
       }
 
       const locationString = locationParts.length > 0
@@ -162,39 +95,23 @@ export default function CreateListingPage() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
-
-        // Update map coordinates
         setMapCoordinates({ lat: latitude, lng: longitude })
-
         const { locationString, city, district } = await reverseGeocode(latitude, longitude)
-
         setAutoLocation(locationString)
         if (city) setCity(city)
         if (district) setDistrict(district)
-
         setIsLoadingLocation(false)
         setUseAutoLocation(true)
       },
       (error) => {
         let errorMessage = 'Unable to retrieve your location.'
-        // Check if error code exists
         if (error && error.code) {
-          if (error.code === 1) { // PERMISSION_DENIED
-            errorMessage = 'Location permission denied.'
-          } else if (error.code === 2) { // POSITION_UNAVAILABLE
-            errorMessage = 'Location information is unavailable.'
-          } else if (error.code === 3) { // TIMEOUT
-            errorMessage = 'The request to get user location timed out.'
-          }
+          if (error.code === 1) errorMessage = 'Location permission denied.'
+          else if (error.code === 2) errorMessage = 'Location information is unavailable.'
+          else if (error.code === 3) errorMessage = 'The request to get user location timed out.'
         }
-
         setLocationError(`${errorMessage} Please enter manually or select on map.`)
         setIsLoadingLocation(false)
-
-        // Only log as error if it's not a permission denial
-        if (error?.code !== 1) {
-          console.warn('Geolocation issue:', error.message || 'Unknown error', error)
-        }
       },
       { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
     )
@@ -207,177 +124,158 @@ export default function CreateListingPage() {
     setAutoLocation(locationString)
     if (city) setCity(city)
     if (district) setDistrict(district)
-
     setIsLoadingLocation(false)
     setUseAutoLocation(true)
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchLocation()
   }, [])
 
-  const handleCancelAutoLocation = () => {
-    setAutoLocation('')
-    setUseAutoLocation(false)
-    setLocationError('')
-    setMapCoordinates(null)
-  }
-
   return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl text-center font-bold">Create a New Ticket</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen bg-white" style={{ backgroundColor: '#F4FFF8' }}>
+      <div className="container mx-auto py-8 px-4 max-w-[640px]">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Title */}
+          <h1 className="text-xl font-semibold mb-6">Share Your Request</h1>
+
+          {/* Type Tabs */}
+          <div className="flex gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => setSelectedType('need')}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                selectedType === 'need'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              I need Help
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedType('offer')}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                selectedType === 'offer'
+                  ? 'bg-black text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              I want to Help
+            </button>
+          </div>
+
+          {/* Form */}
           <form
             action={async (formData) => {
               setIsSubmitting(true)
-              // If we have map coordinates, append them to the form data or ensure they are part of the location string
-              // For now, we rely on the location string in the input
+              formData.set('type', selectedType)
               await createListing(formData)
               setIsSubmitting(false)
             }}
-            className="space-y-6"
+            className="space-y-5"
           >
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" placeholder="e.g., Need food for 5 families" required />
+            {/* Write your request in brief */}
+            <div>
+              <Label htmlFor="title" className="text-sm font-normal mb-1.5 block">
+                Write your request in brief
+              </Label>
+              <Input
+                id="title"
+                name="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Need food for 5 families"
+                required
+                className="text-sm"
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Your Full Name</Label>
+            {/* Category */}
+            <div>
+              <Label htmlFor="category" className="text-sm font-normal mb-1.5 block">
+                Category
+              </Label>
+              <Select name="category" defaultValue="business" required>
+                <SelectTrigger className="w-full text-sm">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="business">Business</SelectItem>
+                  <SelectItem value="education">Education</SelectItem>
+                  <SelectItem value="financial">Financial Assistance</SelectItem>
+                  <SelectItem value="legal">Legal Aid</SelectItem>
+                  <SelectItem value="shelter">Shelter</SelectItem>
+                  <SelectItem value="veterinary">Veterinary Services</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Your Full Name */}
+            <div>
+              <Label htmlFor="full_name" className="text-sm font-normal mb-1.5 block">
+                Your Full Name
+              </Label>
               <Input
                 id="full_name"
                 name="full_name"
                 placeholder="e.g., John Doe"
                 required
-                className="font-medium"
+                className="text-sm"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-500 mt-1">
                 This will be displayed as the poster of this listing
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
-                <Select name="type" defaultValue="need" required>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="need">Request Help</SelectItem>
-                    <SelectItem value="offer">Offer Help</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select name="category" defaultValue="business" required>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="business">Business</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="financial">Financial Assistance</SelectItem>
-                    <SelectItem value="legal">Legal Aid</SelectItem>
-                    <SelectItem value="shelter">Shelter</SelectItem>
-                    <SelectItem value="veterinary">Veterinary Services</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-
-                  </SelectContent>
-                </Select>
-              </div>
-
+            {/* Add a detailed description */}
+            <div>
+              <Label htmlFor="description" className="text-sm font-normal mb-1.5 block">
+                Add a detailed description
+              </Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe the situation in detail..."
+                className="min-h-[80px] text-sm resize-none"
+                required
+              />
+              <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                <span className="inline-block w-4 h-[1px] bg-gray-300"></span>
+                <span className="inline-block w-4 h-[1px] bg-gray-300"></span>
+                <span className="inline-block w-4 h-[1px] bg-gray-300"></span>
+              </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <div className="relative">
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the situation in detail..."
-                  className="min-h-[100px] pr-12"
-                  required
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleBulletPoints}
-                  className="absolute right-2 top-2 h-8 px-2"
-                  title="Convert to bullet points"
-                  disabled={!description.trim()}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Location (City/District)</Label>
+            {/* Location Section */}
+            <div>
+              <Label className="text-sm font-normal mb-3 block">
+                Location (City/District)
+              </Label>
 
               <div className="mb-4">
                 <LocationPicker
                   onLocationSelect={handleMapLocationSelect}
                   initialLocation={mapCoordinates || undefined}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Click on the map to pinpoint your exact location.
+                <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  Click on the map to select location
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  📍 Location 📍 Geolocation coordinates
+                </p>
+                <p className="text-xs text-gray-500">
+                  Click on the map to pinpoint yours exact location
                 </p>
               </div>
 
-              {useAutoLocation && autoLocation && (
-                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md mb-2">
-                  <MapPin className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-700 flex-1">
-                    <span className="font-bold">Location Found: </span>
-                    {autoLocation}
-                  </span>
-                  <div className="flex gap-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={fetchLocation}
-                      disabled={isLoadingLocation}
-                      className="h-7 px-2 cursor-pointer"
-                      title="Update location"
-                    >
-                      <RefreshCw className={`h-3 w-3 ${isLoadingLocation ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleCancelAutoLocation}
-                      className="h-7 px-2 cursor-pointer"
-                      title="Enter location manually"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {isLoadingLocation && !autoLocation && (
-                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md mb-2">
-                  <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
-                  <span className="text-sm text-blue-700">Fetching your location...</span>
-                </div>
-              )}
-
               {locationError && (
-                <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-2">
-                  <span className="text-sm text-yellow-700">{locationError}</span>
+                <div className="mb-3 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                  {locationError}
                 </div>
               )}
 
@@ -387,20 +285,25 @@ export default function CreateListingPage() {
                   name="location"
                   placeholder="e.g., Colombo 03"
                   required
+                  className="text-sm mb-3"
                 />
               )}
 
-              {/* Hidden input to submit auto-detected location */}
               {useAutoLocation && autoLocation && (
-                <input
-                  type="hidden"
-                  id="location"
-                  name="location"
-                  value={autoLocation}
-                />
+                <>
+                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-md text-sm">
+                    <p className="font-medium text-green-800 mb-1">Location permission granted! Please enter manually or select on map.</p>
+                    <p className="text-green-700">{autoLocation}</p>
+                  </div>
+                  <input
+                    type="hidden"
+                    id="location"
+                    name="location"
+                    value={autoLocation}
+                  />
+                </>
               )}
 
-              {/* Hidden inputs for coordinates if backend supports it later */}
               {mapCoordinates && (
                 <>
                   <input type="hidden" name="latitude" value={mapCoordinates.lat} />
@@ -409,19 +312,21 @@ export default function CreateListingPage() {
               )}
             </div>
 
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">District</Label>
+            {/* District and City */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="district" className="text-sm font-normal mb-1.5 block">
+                  District
+                </Label>
                 <Select name="district" value={district} onValueChange={setDistrict} required>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select district" />
+                  <SelectTrigger className="w-full text-sm">
+                   <SelectValue placeholder="Select District" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     <div className="px-2 py-2 sticky top-0 bg-background border-b w-full z-50">
                       <Input
                         placeholder="Search district..."
-                        className="h-9"
+                        className="h-9 text-sm"
                         onKeyDown={(e) => e.stopPropagation()}
                         onChange={(e) => {
                           const searchTerm = e.target.value.toLowerCase();
@@ -444,10 +349,10 @@ export default function CreateListingPage() {
                     <SelectItem value="hambantota" data-district-item>Hambantota District</SelectItem>
                     <SelectItem value="jaffna" data-district-item>Jaffna District</SelectItem>
                     <SelectItem value="kalutara" data-district-item>Kalutara District</SelectItem>
-                    <SelectItem value="kurunegala" data-district-item>Kurunegala District</SelectItem>
                     <SelectItem value="kandy" data-district-item>Kandy District</SelectItem>
                     <SelectItem value="kegalle" data-district-item>Kegalle District</SelectItem>
                     <SelectItem value="kilinochchi" data-district-item>Kilinochchi District</SelectItem>
+                    <SelectItem value="kurunegala" data-district-item>Kurunegala District</SelectItem>
                     <SelectItem value="mannar" data-district-item>Mannar District</SelectItem>
                     <SelectItem value="matale" data-district-item>Matale District</SelectItem>
                     <SelectItem value="matara" data-district-item>Matara District</SelectItem>
@@ -463,68 +368,89 @@ export default function CreateListingPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+              <div>
+                <Label htmlFor="city" className="text-sm font-normal mb-1.5 block">
+                  City
+                </Label>
                 <Input
                   id="city"
                   name="city"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="e.g., Colombo, Kandy, Galle"
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Google map Link */}
+            <div>
+              <Label htmlFor="google_map_link" className="text-sm font-normal mb-1.5 block">
+                Google map Link
+              </Label>
+              <Input
+                id="google_map_link"
+                name="google_map_link"
+                type="url"
+                placeholder="https://maps.google.com/..."
+                className="text-sm"
+              />
+            </div>
+
+            {/* Contact Fields */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="contact_email" className="text-sm font-normal mb-1.5 block">
+                  Contact Email
+                </Label>
+                <Input
+                  id="contact_email"
+                  name="contact_email"
+                  type="email"
+                  placeholder="you@example.com"
+                  className="text-sm"
                 />
               </div>
 
-              {/* <div className="space-y-2">
-                <Label htmlFor="priority">Priority Level</Label>
-                <Select name="priority" defaultValue="low" required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-
-                  </SelectContent>
-                </Select>
-              </div> */}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="google_map_link">Google map Link</Label>
-              <Input id="google_map_link" name="google_map_link" type="url" placeholder="https://maps.google.com/..." />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="contact_email">Contact Email</Label>
-                <Input id="contact_email" name="contact_email" type="email" placeholder="sample@gmail.com" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="contact_phone">Contact Phone</Label>
-                <Input id="contact_phone" name="contact_phone" type="tel" placeholder="e.g., +94123456789" />
+              <div>
+                <Label htmlFor="contact_phone" className="text-sm font-normal mb-1.5 block">
+                  Contact Phone
+                </Label>
+                <Input
+                  id="contact_phone"
+                  name="contact_phone"
+                  type="tel"
+                  placeholder="e.g., +94123456789"
+                  className="text-sm"
+                />
               </div>
             </div>
 
-
-            <div className="space-y-2">
-              <Label htmlFor="contact_phone">whatsapp Contact Number</Label>
-              <Input id="whatsapp_contact" name="whatsapp_contact" type="tel" placeholder="e.g., +94123456789" />
+            {/* WhatsApp Contact Number */}
+            <div>
+              <Label htmlFor="whatsapp_contact" className="text-sm font-normal mb-1.5 block">
+                whatsapp Contact Number
+              </Label>
+              <Input
+                id="whatsapp_contact"
+                name="whatsapp_contact"
+                type="tel"
+                placeholder="e.g., +94123456789"
+                className="text-sm"
+              />
             </div>
 
-
-
-            {/* <div className="space-y-2">
-              <Label htmlFor="media">Photos (Optional)</Label>
-              <Input id="media" name="media" type="file" multiple accept="image/*" />
-            </div> */}
-
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create a Ticket'}
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-base rounded-md"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating...' : 'Share Your Request'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
