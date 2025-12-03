@@ -159,10 +159,27 @@ export default function CreateListingPage() {
         setUseAutoLocation(true)
       },
       (error) => {
-        setLocationError('Unable to retrieve your location. Please enter manually or select on map.')
+        let errorMessage = 'Unable to retrieve your location.'
+        // Check if error code exists
+        if (error && error.code) {
+          if (error.code === 1) { // PERMISSION_DENIED
+            errorMessage = 'Location permission denied.'
+          } else if (error.code === 2) { // POSITION_UNAVAILABLE
+            errorMessage = 'Location information is unavailable.'
+          } else if (error.code === 3) { // TIMEOUT
+            errorMessage = 'The request to get user location timed out.'
+          }
+        }
+
+        setLocationError(`${errorMessage} Please enter manually or select on map.`)
         setIsLoadingLocation(false)
-        console.error('Geolocation error:', error)
-      }
+
+        // Only log as error if it's not a permission denial
+        if (error?.code !== 1) {
+          console.warn('Geolocation issue:', error.message || 'Unknown error', error)
+        }
+      },
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
     )
   }
 
