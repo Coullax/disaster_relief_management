@@ -200,7 +200,7 @@ export default function CreateListingPage() {
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
                 <Select name="type" defaultValue="need" required>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -213,7 +213,7 @@ export default function CreateListingPage() {
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
                 <Select name="category" defaultValue="business" required>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -229,48 +229,32 @@ export default function CreateListingPage() {
                 </Select>
               </div>
 
-
-
-                <div className="space-y-2">
-                <Label htmlFor="priority">Priority Level</Label>
-                <Select name="priority" defaultValue="low" required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="space-y-2">
- <Label htmlFor="description">Description</Label>
-  <div className="relative">
-    <Textarea 
-      id="description" 
-      name="description" 
-      value={description}
-      onChange={(e) => setDescription(e.target.value)}
-      placeholder="Describe the situation in detail..." 
-      className="min-h-[100px] pr-12"
-      required 
-    />
-    <Button
-      type="button"
-      size="sm"
-      variant="ghost"
-      onClick={handleBulletPoints}
-      className="absolute right-2 top-2 h-8 px-2"
-      title="Convert to bullet points"
-      disabled={!description.trim()}
-    >
-      <List className="h-4 w-4" />
-    </Button>
-            </div>
+              <Label htmlFor="description">Description</Label>
+              <div className="relative">
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe the situation in detail..."
+                  className="min-h-[100px] pr-12"
+                  required
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleBulletPoints}
+                  className="absolute right-2 top-2 h-8 px-2"
+                  title="Convert to bullet points"
+                  disabled={!description.trim()}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
 
             </div>
 
@@ -341,6 +325,86 @@ export default function CreateListingPage() {
                   value={autoLocation} 
                 />
               )}
+            </div>
+
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">District</Label>
+                <Select name="type" defaultValue="colombo" required>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select district" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <div className="px-2 py-2 sticky top-0 bg-background border-b w-full z-50">
+                      <Input
+                        placeholder="Search district..."
+                        className="h-9"
+                        onKeyDown={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          const searchTerm = e.target.value.toLowerCase();
+                          const items = document.querySelectorAll('[data-district-item]');
+                          items.forEach((item) => {
+                            const text = item.textContent?.toLowerCase() || '';
+                            const element = item as HTMLElement;
+                            element.style.display = text.includes(searchTerm) ? '' : 'none';
+                          });
+                        }}
+                      />
+                    </div>
+                    <SelectItem value="ampara" data-district-item>Ampara District</SelectItem>
+                    <SelectItem value="anuradhapura" data-district-item>Anuradhapura District</SelectItem>
+                    <SelectItem value="badulla" data-district-item>Badulla District</SelectItem>
+                    <SelectItem value="batticaloa" data-district-item>Batticaloa District</SelectItem>
+                    <SelectItem value="colombo" data-district-item>Colombo District</SelectItem>
+                    <SelectItem value="galle" data-district-item>Galle District</SelectItem>
+                    <SelectItem value="gampaha" data-district-item>Gampaha District</SelectItem>
+                    <SelectItem value="hambantota" data-district-item>Hambantota District</SelectItem>
+                    <SelectItem value="jaffna" data-district-item>Jaffna District</SelectItem>
+                    <SelectItem value="kalutara" data-district-item>Kalutara District</SelectItem>
+                     <SelectItem value="kurunegala" data-district-item>Kurunegala District</SelectItem>
+                    <SelectItem value="kandy" data-district-item>Kandy District</SelectItem>
+                    <SelectItem value="kegalle" data-district-item>Kegalle District</SelectItem>
+                    <SelectItem value="kilinochchi" data-district-item>Kilinochchi District</SelectItem>
+                    <SelectItem value="mannar" data-district-item>Mannar District</SelectItem>
+                    <SelectItem value="matale" data-district-item>Matale District</SelectItem>
+                    <SelectItem value="matara" data-district-item>Matara District</SelectItem>
+                    <SelectItem value="monaragala" data-district-item>Monaragala District</SelectItem>
+                    <SelectItem value="mullaitivu" data-district-item>Mullaitivu District</SelectItem>
+                    <SelectItem value="nuwaraeliya" data-district-item>Nuwara Eliya District</SelectItem>
+                    <SelectItem value="polonnaruwa" data-district-item>Polonnaruwa District</SelectItem>
+                    <SelectItem value="puttalam" data-district-item>Puttalam District</SelectItem>
+                    <SelectItem value="ratnapura" data-district-item>Ratnapura District</SelectItem>
+                    <SelectItem value="trincomalee" data-district-item>Trincomalee District</SelectItem>
+                    <SelectItem value="vavuniya" data-district-item>Vavuniya District</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input id="city" name="city" placeholder="e.g., Colombo, Kandy, Galle" />
+              </div>
+
+                {/* <div className="space-y-2">
+                <Label htmlFor="priority">Priority Level</Label>
+                <Select name="priority" defaultValue="low" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+
+                  </SelectContent>
+                </Select>
+              </div> */}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="google_map_link">Google map Link</Label>
+              <Input id="google_map_link" name="google_map_link" type="url" placeholder="https://maps.google.com/..." />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
