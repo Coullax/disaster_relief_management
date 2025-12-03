@@ -22,9 +22,9 @@ export default async function Home({
   const subheading = 'Connect with those affected by disasters and provide direct assistance.'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#F4FFF8' }}>
       {/* Header with Logo and Hero Banner */}
-      <div className="bg-white border-b">
+      <div className="border-b" style={{ backgroundColor: '#F4FFF8' }}>
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
             {/* Logo and Title - Left Side */}
