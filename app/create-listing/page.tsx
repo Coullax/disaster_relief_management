@@ -101,32 +101,34 @@ export default function CreateListingPage() {
       console.log("address:", address)
       const locationParts = []
 
-      // Include all available address components
-      if (address.house_number) {
-        locationParts.push(address.house_number)
-      }
-      if (address.road) {
-        locationParts.push(address.road)
-      }
-      if (address.suburb || address.neighbourhood) {
-        locationParts.push(address.suburb || address.neighbourhood)
-      }
-      if (address.city || address.town || address.village) {
-        locationParts.push(address.city || address.town || address.village)
-      }
-      if (address.state_district) {
-        locationParts.push(address.state_district)
-      }
-      if (address.state) {
-        locationParts.push(address.state)
-      }
-      if (address.postcode) {
-        locationParts.push(address.postcode)
+      if (address) {
+        // Include all available address components
+        if (address.house_number) {
+          locationParts.push(address.house_number)
+        }
+        if (address.road) {
+          locationParts.push(address.road)
+        }
+        if (address.suburb || address.neighbourhood) {
+          locationParts.push(address.suburb || address.neighbourhood)
+        }
+        if (address.city || address.town || address.village) {
+          locationParts.push(address.city || address.town || address.village)
+        }
+        if (address.state_district) {
+          locationParts.push(address.state_district)
+        }
+        if (address.state) {
+          locationParts.push(address.state)
+        }
+        if (address.postcode) {
+          locationParts.push(address.postcode)
+        }
       }
 
       const locationString = locationParts.length > 0
         ? locationParts.join(', ')
-        : data.display_name.split(',').slice(0, 3).join(',')
+        : (data.display_name ? data.display_name.split(',').slice(0, 3).join(',') : `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`)
 
       return locationString
     } catch (error) {
