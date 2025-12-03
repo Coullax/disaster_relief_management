@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useState, useEffect } from 'react'
-import { MapPin, RefreshCw, X } from 'lucide-react'
+import { MapPin, RefreshCw, X, List } from 'lucide-react'
 
 export default function CreateListingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -79,12 +79,69 @@ export default function CreateListingPage() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords
-        const locationString = `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
-        setAutoLocation(locationString)
-        setIsLoadingLocation(false)
-        setUseAutoLocation(true)
+        
+        try {
+          // Reverse geocoding using Nominatim API
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                'Accept-Language': 'en'
+              }
+            }
+          )
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch location name')
+          }
+          
+          const data = await response.json()
+          
+          // Extract location information
+          const address = data.address
+          console.log("address:",address)
+          const locationParts = []
+          
+          // Include all available address components
+          if (address.house_number) {
+            locationParts.push(address.house_number)
+          }
+          if (address.road) {
+            locationParts.push(address.road)
+          }
+          if (address.suburb || address.neighbourhood) {
+            locationParts.push(address.suburb || address.neighbourhood)
+          }
+          if (address.city || address.town || address.village) {
+            locationParts.push(address.city || address.town || address.village)
+          }
+          if (address.state_district) {
+            locationParts.push(address.state_district)
+          }
+          if (address.state) {
+            locationParts.push(address.state)
+          }
+          if (address.postcode) {
+            locationParts.push(address.postcode)
+          }
+          
+          const locationString = locationParts.length > 0 
+            ? locationParts.join(', ')
+            : data.display_name.split(',').slice(0, 3).join(',')
+          
+          setAutoLocation(locationString)
+          setIsLoadingLocation(false)
+          setUseAutoLocation(true)
+        } catch (error) {
+          // Fallback to coordinates if geocoding fails
+          const locationString = `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
+          setAutoLocation(locationString)
+          setIsLoadingLocation(false)
+          setUseAutoLocation(true)
+          console.error('Geocoding error:', error)
+        }
       },
       (error) => {
         setLocationError('Unable to retrieve your location. Please enter manually.')
@@ -109,7 +166,7 @@ export default function CreateListingPage() {
     <div className="container mx-auto py-8 px-4 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Create New Listing</CardTitle>
+          <CardTitle className="text-2xl text-center font-bold">Create a New Ticket</CardTitle>
         </CardHeader>
         <CardContent>
           <form 
@@ -155,15 +212,36 @@ export default function CreateListingPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select name="category" defaultValue="medical" required>
+                <Select name="category" defaultValue="business" required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="medical">Medical</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                    <SelectItem value="education">Education</SelectItem>
+                    <SelectItem value="financial">Financial Assistance</SelectItem>
+                    <SelectItem value="legal">Legal Aid</SelectItem>
                     <SelectItem value="shelter">Shelter</SelectItem>
-                    <SelectItem value="transport">Transport</SelectItem>
+                    <SelectItem value="veterinary">Veterinary Services</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
+
+                  </SelectContent>
+                </Select>
+              </div>
+
+
+
+                <div className="space-y-2">
+                <Label htmlFor="priority">Priority Level</Label>
+                <Select name="priority" defaultValue="low" required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+
                   </SelectContent>
                 </Select>
               </div>
@@ -190,7 +268,7 @@ export default function CreateListingPage() {
       title="Convert to bullet points"
       disabled={!description.trim()}
     >
-            •••
+      <List className="h-4 w-4" />
     </Button>
             </div>
 
@@ -213,7 +291,7 @@ export default function CreateListingPage() {
                       variant="ghost"
                       onClick={fetchLocation}
                       disabled={isLoadingLocation}
-                      className="h-7 px-2"
+                      className="h-7 px-2 cursor-pointer"
                       title="Update location"
                     >
                       <RefreshCw className={`h-3 w-3 ${isLoadingLocation ? 'animate-spin' : ''}`} />
@@ -223,7 +301,7 @@ export default function CreateListingPage() {
                       size="sm"
                       variant="ghost"
                       onClick={handleCancelAutoLocation}
-                      className="h-7 px-2"
+                      className="h-7 px-2 cursor-pointer"
                       title="Enter location manually"
                     >
                       <X className="h-3 w-3" />
@@ -277,10 +355,10 @@ export default function CreateListingPage() {
             </div>
 
             
-            {/* <div className="space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="contact_phone">whatsapp Contact Number</Label>
               <Input id="whatsapp_contact" name="whatsapp_contact" type="tel" placeholder="e.g., +94123456789" />
-            </div> */}
+            </div>
 
 
 
@@ -290,7 +368,7 @@ export default function CreateListingPage() {
             </div> */}
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Listing'}
+              {isSubmitting ? 'Creating...' : 'Create a Ticket'}
             </Button>
           </form>
         </CardContent>
