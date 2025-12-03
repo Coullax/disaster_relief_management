@@ -7,7 +7,7 @@ import 'leaflet/dist/leaflet.css'
 import { Button } from './button'
 import { MapPin, Navigation } from 'lucide-react'
 
-// Fix for default marker icon
+// Fix for default marker icons
 const icon = L.icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
