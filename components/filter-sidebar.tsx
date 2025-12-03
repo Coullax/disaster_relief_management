@@ -70,10 +70,18 @@ export function FilterSidebar({ currentType, currentCategory, currentSearch }: F
               All Categories
             </div>
           </Link>
-          {['medical', 'shelter', 'transport', 'other'].map((cat) => (
-            <Link key={cat} href={`/?type=${currentType}&category=${cat}${currentSearch ? `&search=${currentSearch}` : ''}`}>
-              <div className={`p-2 rounded hover:bg-gray-100 capitalize ${currentCategory === cat ? 'bg-gray-100 font-medium' : ''}`}>
-                {cat}
+          {[
+            { value: 'business', label: 'Business' },
+            { value: 'education', label: 'Education' },
+            { value: 'financial', label: 'Financial Assistance' },
+            { value: 'legal', label: 'Legal Aid' },
+            { value: 'shelter', label: 'Shelter' },
+            { value: 'veterinary', label: 'Veterinary Services' },
+            { value: 'other', label: 'Other' }
+          ].map((cat) => (
+            <Link key={cat.value} href={`/?type=${currentType}&category=${cat.value}${currentSearch ? `&search=${currentSearch}` : ''}`}>
+              <div className={`p-2 rounded hover:bg-gray-100 ${currentCategory === cat.value ? 'bg-gray-100 font-medium' : ''}`}>
+                {cat.label}
               </div>
             </Link>
           ))}
