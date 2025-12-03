@@ -22,7 +22,9 @@ export async function createListing(formData: FormData) {
     contact_email = user.email
   }
   const contact_phone = formData.get('contact_phone') as string
-  
+  const latitude = parseFloat(formData.get('latitude') as string) || null
+  const longitude = parseFloat(formData.get('longitude') as string) || null
+
   // Handle media upload (simplified for now, assumes URLs or we need to implement upload)
   // For this step, we'll just insert the listing without media or assume media_urls is passed if we had a client uploader.
   // But the prompt says "Multipart/Form-data handling" and "Implement Image Upload".
@@ -39,7 +41,7 @@ export async function createListing(formData: FormData) {
         const { data, error } = await supabase.storage
           .from('media')
           .upload(name, file)
-        
+
         if (data) {
           const { data: { publicUrl } } = supabase.storage
             .from('media')
@@ -56,7 +58,7 @@ export async function createListing(formData: FormData) {
   if (!profileId) {
     // Check if profile exists with email or phone
     const query = supabase.from('profiles').select('id')
-    
+
     if (contact_email) {
       query.or(`email.eq.${contact_email}`)
     }
@@ -65,12 +67,12 @@ export async function createListing(formData: FormData) {
       // Simple approach: check both independently or use OR syntax correctly
       // .or(`email.eq.${contact_email},phone.eq.${contact_phone}`)
       // But we need to handle if one is missing.
-      
+
       let orQuery = ''
       if (contact_email) orQuery += `email.eq.${contact_email}`
       if (contact_email && contact_phone) orQuery += ','
       if (contact_phone) orQuery += `phone.eq.${contact_phone}`
-      
+
       if (orQuery) query.or(orQuery)
     }
 
@@ -78,7 +80,7 @@ export async function createListing(formData: FormData) {
 
     if (existingProfiles && existingProfiles.length > 0) {
       profileId = existingProfiles[0].id
-      
+
       // Update the existing profile with the new full name
       await supabase
         .from('profiles')
@@ -130,6 +132,8 @@ export async function createListing(formData: FormData) {
     type,
     category,
     location,
+    latitude,
+    longitude,
     contact_email,
     contact_phone,
     media_urls,
