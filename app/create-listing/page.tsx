@@ -125,6 +125,20 @@ export default function CreateListingPage() {
               <Input id="title" name="title" placeholder="e.g., Need food for 5 families" required />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="full_name">Your Full Name</Label>
+              <Input 
+                id="full_name" 
+                name="full_name" 
+                placeholder="e.g., John Doe" 
+                required 
+                className="font-medium"
+              />
+              <p className="text-xs text-muted-foreground">
+                This will be displayed as the poster of this listing
+              </p>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
@@ -270,10 +284,10 @@ export default function CreateListingPage() {
 
 
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="media">Photos (Optional)</Label>
               <Input id="media" name="media" type="file" multiple accept="image/*" />
-            </div>
+            </div> */}
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Creating...' : 'Create Listing'}

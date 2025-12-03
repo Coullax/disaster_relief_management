@@ -16,6 +16,7 @@ export async function createListing(formData: FormData) {
   const type = formData.get('type') as 'need' | 'offer'
   const category = formData.get('category') as string
   const location = formData.get('location') as string
+  const full_name = formData.get('full_name') as string
   let contact_email = formData.get('contact_email') as string
   if (!contact_email && user?.email) {
     contact_email = user.email
@@ -77,14 +78,20 @@ export async function createListing(formData: FormData) {
 
     if (existingProfiles && existingProfiles.length > 0) {
       profileId = existingProfiles[0].id
+      
+      // Update the existing profile with the new full name
+      await supabase
+        .from('profiles')
+        .update({ full_name: full_name })
+        .eq('id', profileId)
     } else {
-      // Create new profile
+      // Create new profile with the provided full name
       const { data: newProfile, error: profileError } = await supabase
         .from('profiles')
         .insert({
           email: contact_email || null,
           phone: contact_phone || null,
-          full_name: 'Anonymous User', // Or derive from something else if available
+          full_name: full_name || 'Anonymous User',
         })
         .select()
         .single()
@@ -95,6 +102,12 @@ export async function createListing(formData: FormData) {
       }
       profileId = newProfile.id
     }
+  } else {
+    // If user is authenticated, update their profile with the full name
+    await supabase
+      .from('profiles')
+      .update({ full_name: full_name })
+      .eq('id', profileId)
   }
 
   // Check for existing listings to determine status
