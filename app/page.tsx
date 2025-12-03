@@ -100,7 +100,7 @@ export default async function Home({
                 </Link>
               </div>
               <Button asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold">
-                <Link href="/create-listing">Share Your Request</Link>
+                <Link href="/create-listing" className='font-sans'>Share Your Request</Link>
               </Button>
             </div>
 
