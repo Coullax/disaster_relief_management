@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { useState, useEffect } from 'react'
-import { MapPin } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect, useRef } from 'react'
+import { MapPin, RefreshCw, X, List } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 // Dynamically import LocationPicker to avoid SSR issues with Leaflet
@@ -19,6 +20,7 @@ const LocationPicker = dynamic(() => import('@/components/ui/location-picker'), 
 export default function CreateListingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedType, setSelectedType] = useState('need')
+  const isSubmittingRef = useRef(false)
   const [autoLocation, setAutoLocation] = useState<string>('')
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
   const [locationError, setLocationError] = useState<string>('')
@@ -168,10 +170,23 @@ export default function CreateListingPage() {
           {/* Form */}
           <form
             action={async (formData) => {
+              if (isSubmittingRef.current) return
+              isSubmittingRef.current = true
               setIsSubmitting(true)
               formData.set('type', selectedType)
               await createListing(formData)
               setIsSubmitting(false)
+
+              try {
+                // If we have map coordinates, append them to the form data or ensure they are part of the location string
+                // For now, we rely on the location string in the input
+                await createListing(formData)
+              } catch (error) {
+                console.error("Submission error:", error)
+              } finally {
+                isSubmittingRef.current = false
+                setIsSubmitting(false)
+              }
             }}
             className="space-y-5"
           >
