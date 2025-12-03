@@ -16,6 +16,57 @@ export default function CreateListingPage() {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
   const [locationError, setLocationError] = useState<string>('')
   const [useAutoLocation, setUseAutoLocation] = useState(true)
+  const [description, setDescription] = useState('')
+  const textareaRef = useState<HTMLTextAreaElement | null>(null)[0]
+
+  const handleBulletPoints = () => {
+    const textarea = document.getElementById('description') as HTMLTextAreaElement
+    if (!textarea) return
+
+    const cursorPos = textarea.selectionStart
+    const textBeforeCursor = description.substring(0, cursorPos)
+    const textAfterCursor = description.substring(cursorPos)
+    
+    // Find the start of the current line
+    const lastNewlineBeforeCursor = textBeforeCursor.lastIndexOf('\n')
+    const currentLineStart = lastNewlineBeforeCursor + 1
+    const currentLine = textBeforeCursor.substring(currentLineStart)
+    
+    // Check if current line already has a bullet
+    const trimmedLine = currentLine.trim()
+    if (trimmedLine.startsWith('•')) {
+      // If already a bullet, just add a new line with bullet
+      const newText = description.substring(0, cursorPos) + '\n• ' + textAfterCursor
+      setDescription(newText)
+      
+      // Move cursor after the new bullet
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = cursorPos + 3
+        textarea.focus()
+      }, 0)
+    } else if (trimmedLine.length > 0) {
+      // Convert current line to bullet point
+      const textBeforeLine = textBeforeCursor.substring(0, currentLineStart)
+      const newText = textBeforeLine + '• ' + trimmedLine + '\n• ' + textAfterCursor
+      setDescription(newText)
+      
+      // Move cursor to the new line after the bullet
+      const newCursorPos = textBeforeLine.length + trimmedLine.length + 5
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = newCursorPos
+        textarea.focus()
+      }, 0)
+    } else {
+      // Empty line, just add bullet
+      const newText = description.substring(0, cursorPos) + '• ' + textAfterCursor
+      setDescription(newText)
+      
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = cursorPos + 2
+        textarea.focus()
+      }, 0)
+    }
+  }
 
   const fetchLocation = () => {
     setIsLoadingLocation(true)
@@ -90,12 +141,11 @@ export default function CreateListingPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select name="category" defaultValue="food" required>
+                <Select name="category" defaultValue="medical" required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="food">Food & Water</SelectItem>
                     <SelectItem value="medical">Medical</SelectItem>
                     <SelectItem value="shelter">Shelter</SelectItem>
                     <SelectItem value="transport">Transport</SelectItem>
@@ -106,14 +156,30 @@ export default function CreateListingPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                name="description" 
-                placeholder="Describe the situation in detail..." 
-                className="min-h-[100px]"
-                required 
-              />
+ <Label htmlFor="description">Description</Label>
+  <div className="relative">
+    <Textarea 
+      id="description" 
+      name="description" 
+      value={description}
+      onChange={(e) => setDescription(e.target.value)}
+      placeholder="Describe the situation in detail..." 
+      className="min-h-[100px] pr-12"
+      required 
+    />
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      onClick={handleBulletPoints}
+      className="absolute right-2 top-2 h-8 px-2"
+      title="Convert to bullet points"
+      disabled={!description.trim()}
+    >
+            •••
+    </Button>
+            </div>
+
             </div>
 
             <div className="space-y-2">
@@ -188,13 +254,19 @@ export default function CreateListingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="contact_email">Contact Email</Label>
-                <Input id="contact_email" name="contact_email" type="email" placeholder="Optional" />
+                <Input id="contact_email" name="contact_email" type="email" placeholder="sample@gmail.com" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contact_phone">Contact Phone</Label>
-                <Input id="contact_phone" name="contact_phone" type="tel" placeholder="Optional" />
+                <Input id="contact_phone" name="contact_phone" type="tel" placeholder="e.g., +94123456789" />
               </div>
             </div>
+
+            
+            {/* <div className="space-y-2">
+              <Label htmlFor="contact_phone">whatsapp Contact Number</Label>
+              <Input id="whatsapp_contact" name="whatsapp_contact" type="tel" placeholder="e.g., +94123456789" />
+            </div> */}
 
 
 
