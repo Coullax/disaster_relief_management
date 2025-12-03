@@ -56,6 +56,11 @@ export function ListingCard({ listing }: ListingCardProps) {
               <Package className="w-3 h-3 mr-1" />
               {listing.category}
             </Badge>
+            {listing.view_count > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                👁️ {listing.view_count}
+              </Badge>
+            )}
           </div>
         </div>
 

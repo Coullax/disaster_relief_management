@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { incrementListingViewCount } from '@/lib/actions/listings'
 import { notFound } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,9 @@ export default async function ListingPage({
   if (!listing) {
     notFound()
   }
+
+  // Increment view count (fire and forget - don't await)
+  incrementListingViewCount(id).catch(console.error)
 
   return (
     <div className="container mx-auto py-8 px-4">

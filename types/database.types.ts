@@ -56,6 +56,7 @@ export interface Database {
           status: 'active' | 'closed' | 'pending'
           contact_email: string | null
           contact_phone: string | null
+          view_count: number
           created_at: string
         }
         Insert: {
@@ -72,6 +73,7 @@ export interface Database {
           status?: 'active' | 'closed' | 'pending'
           contact_email?: string | null
           contact_phone?: string | null
+          view_count?: number
           created_at?: string
         }
         Update: {
@@ -88,6 +90,7 @@ export interface Database {
           status?: 'active' | 'closed' | 'pending'
           contact_email?: string | null
           contact_phone?: string | null
+          view_count?: number
           created_at?: string
         }
       }

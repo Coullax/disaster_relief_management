@@ -28,6 +28,8 @@ export async function getListings({
     .from('listings')
     .select('*', { count: 'exact' })
     .eq('status', 'active')
+    // Sort by view_count ascending (lowest first), then by created_at descending
+    .order('view_count', { ascending: true })
     .order('created_at', { ascending: false })
     .range(from, to)
 
@@ -56,3 +58,21 @@ export async function getListings({
 
   return { listings: data as Listing[], count }
 }
+
+/**
+ * Increment the view count for a listing
+ * Called when a user views a listing detail page
+ */
+export async function incrementListingViewCount(listingId: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase.rpc('increment_listing_view_count', {
+    listing_id: listingId,
+  })
+
+  if (error) {
+    console.error('Error incrementing view count:', error)
+    // Don't throw error - view count is not critical
+  }
+}
+
