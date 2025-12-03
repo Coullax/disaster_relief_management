@@ -9,6 +9,13 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useState, useEffect } from 'react'
 import { MapPin, RefreshCw, X, List } from 'lucide-react'
+import dynamic from 'next/dynamic'
+
+// Dynamically import LocationPicker to avoid SSR issues with Leaflet
+const LocationPicker = dynamic(() => import('@/components/ui/location-picker'), {
+  ssr: false,
+  loading: () => <div className="h-[300px] w-full bg-muted animate-pulse rounded-md flex items-center justify-center text-muted-foreground">Loading Map...</div>
+})
 
 export default function CreateListingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -17,7 +24,10 @@ export default function CreateListingPage() {
   const [locationError, setLocationError] = useState<string>('')
   const [useAutoLocation, setUseAutoLocation] = useState(true)
   const [description, setDescription] = useState('')
-  const textareaRef = useState<HTMLTextAreaElement | null>(null)[0]
+  const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(null)
+
+  // We don't need textareaRef here as we access it by ID in handleBulletPoints
+  // const textareaRef = useState<HTMLTextAreaElement | null>(null)[0]
 
   const handleBulletPoints = () => {
     const textarea = document.getElementById('description') as HTMLTextAreaElement
@@ -26,19 +36,19 @@ export default function CreateListingPage() {
     const cursorPos = textarea.selectionStart
     const textBeforeCursor = description.substring(0, cursorPos)
     const textAfterCursor = description.substring(cursorPos)
-    
+
     // Find the start of the current line
     const lastNewlineBeforeCursor = textBeforeCursor.lastIndexOf('\n')
     const currentLineStart = lastNewlineBeforeCursor + 1
     const currentLine = textBeforeCursor.substring(currentLineStart)
-    
+
     // Check if current line already has a bullet
     const trimmedLine = currentLine.trim()
     if (trimmedLine.startsWith('•')) {
       // If already a bullet, just add a new line with bullet
       const newText = description.substring(0, cursorPos) + '\n• ' + textAfterCursor
       setDescription(newText)
-      
+
       // Move cursor after the new bullet
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = cursorPos + 3
@@ -49,7 +59,7 @@ export default function CreateListingPage() {
       const textBeforeLine = textBeforeCursor.substring(0, currentLineStart)
       const newText = textBeforeLine + '• ' + trimmedLine + '\n• ' + textAfterCursor
       setDescription(newText)
-      
+
       // Move cursor to the new line after the bullet
       const newCursorPos = textBeforeLine.length + trimmedLine.length + 5
       setTimeout(() => {
@@ -60,7 +70,7 @@ export default function CreateListingPage() {
       // Empty line, just add bullet
       const newText = description.substring(0, cursorPos) + '• ' + textAfterCursor
       setDescription(newText)
-      
+
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = cursorPos + 2
         textarea.focus()
@@ -68,10 +78,67 @@ export default function CreateListingPage() {
     }
   }
 
+  const reverseGeocode = async (latitude: number, longitude: number) => {
+    try {
+      // Reverse geocoding using Nominatim API
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'Accept-Language': 'en'
+          }
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch location name')
+      }
+
+      const data = await response.json()
+
+      // Extract location information
+      const address = data.address
+      console.log("address:", address)
+      const locationParts = []
+
+      // Include all available address components
+      if (address.house_number) {
+        locationParts.push(address.house_number)
+      }
+      if (address.road) {
+        locationParts.push(address.road)
+      }
+      if (address.suburb || address.neighbourhood) {
+        locationParts.push(address.suburb || address.neighbourhood)
+      }
+      if (address.city || address.town || address.village) {
+        locationParts.push(address.city || address.town || address.village)
+      }
+      if (address.state_district) {
+        locationParts.push(address.state_district)
+      }
+      if (address.state) {
+        locationParts.push(address.state)
+      }
+      if (address.postcode) {
+        locationParts.push(address.postcode)
+      }
+
+      const locationString = locationParts.length > 0
+        ? locationParts.join(', ')
+        : data.display_name.split(',').slice(0, 3).join(',')
+
+      return locationString
+    } catch (error) {
+      console.error('Geocoding error:', error)
+      return `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
+    }
+  }
+
   const fetchLocation = () => {
     setIsLoadingLocation(true)
     setLocationError('')
-    
+
     if (!navigator.geolocation) {
       setLocationError('Geolocation is not supported by your browser')
       setIsLoadingLocation(false)
@@ -81,74 +148,31 @@ export default function CreateListingPage() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
-        
-        try {
-          // Reverse geocoding using Nominatim API
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-            {
-              headers: {
-                'Accept-Language': 'en'
-              }
-            }
-          )
-          
-          if (!response.ok) {
-            throw new Error('Failed to fetch location name')
-          }
-          
-          const data = await response.json()
-          
-          // Extract location information
-          const address = data.address
-          console.log("address:",address)
-          const locationParts = []
-          
-          // Include all available address components
-          if (address.house_number) {
-            locationParts.push(address.house_number)
-          }
-          if (address.road) {
-            locationParts.push(address.road)
-          }
-          if (address.suburb || address.neighbourhood) {
-            locationParts.push(address.suburb || address.neighbourhood)
-          }
-          if (address.city || address.town || address.village) {
-            locationParts.push(address.city || address.town || address.village)
-          }
-          if (address.state_district) {
-            locationParts.push(address.state_district)
-          }
-          if (address.state) {
-            locationParts.push(address.state)
-          }
-          if (address.postcode) {
-            locationParts.push(address.postcode)
-          }
-          
-          const locationString = locationParts.length > 0 
-            ? locationParts.join(', ')
-            : data.display_name.split(',').slice(0, 3).join(',')
-          
-          setAutoLocation(locationString)
-          setIsLoadingLocation(false)
-          setUseAutoLocation(true)
-        } catch (error) {
-          // Fallback to coordinates if geocoding fails
-          const locationString = `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
-          setAutoLocation(locationString)
-          setIsLoadingLocation(false)
-          setUseAutoLocation(true)
-          console.error('Geocoding error:', error)
-        }
+
+        // Update map coordinates
+        setMapCoordinates({ lat: latitude, lng: longitude })
+
+        const locationString = await reverseGeocode(latitude, longitude)
+
+        setAutoLocation(locationString)
+        setIsLoadingLocation(false)
+        setUseAutoLocation(true)
       },
       (error) => {
-        setLocationError('Unable to retrieve your location. Please enter manually.')
+        setLocationError('Unable to retrieve your location. Please enter manually or select on map.')
         setIsLoadingLocation(false)
         console.error('Geolocation error:', error)
       }
     )
+  }
+
+  const handleMapLocationSelect = async (pos: { lat: number; lng: number }) => {
+    setMapCoordinates(pos)
+    setIsLoadingLocation(true)
+    const locationString = await reverseGeocode(pos.lat, pos.lng)
+    setAutoLocation(locationString)
+    setIsLoadingLocation(false)
+    setUseAutoLocation(true)
   }
 
   useEffect(() => {
@@ -160,6 +184,7 @@ export default function CreateListingPage() {
     setAutoLocation('')
     setUseAutoLocation(false)
     setLocationError('')
+    setMapCoordinates(null)
   }
 
   return (
@@ -169,12 +194,14 @@ export default function CreateListingPage() {
           <CardTitle className="text-2xl text-center font-bold">Create a New Ticket</CardTitle>
         </CardHeader>
         <CardContent>
-          <form 
+          <form
             action={async (formData) => {
               setIsSubmitting(true)
+              // If we have map coordinates, append them to the form data or ensure they are part of the location string
+              // For now, we rely on the location string in the input
               await createListing(formData)
               setIsSubmitting(false)
-            }} 
+            }}
             className="space-y-6"
           >
             <div className="space-y-2">
@@ -184,11 +211,11 @@ export default function CreateListingPage() {
 
             <div className="space-y-2">
               <Label htmlFor="full_name">Your Full Name</Label>
-              <Input 
-                id="full_name" 
-                name="full_name" 
-                placeholder="e.g., John Doe" 
-                required 
+              <Input
+                id="full_name"
+                name="full_name"
+                placeholder="e.g., John Doe"
+                required
                 className="font-medium"
               />
               <p className="text-xs text-muted-foreground">
@@ -260,7 +287,17 @@ export default function CreateListingPage() {
 
             <div className="space-y-2">
               <Label htmlFor="location">Location (City/District)</Label>
-              
+
+              <div className="mb-4">
+                <LocationPicker
+                  onLocationSelect={handleMapLocationSelect}
+                  initialLocation={mapCoordinates || undefined}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Click on the map to pinpoint your exact location.
+                </p>
+              </div>
+
               {useAutoLocation && autoLocation && (
                 <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md mb-2">
                   <MapPin className="h-4 w-4 text-green-600" />
@@ -308,22 +345,30 @@ export default function CreateListingPage() {
               )}
 
               {(!useAutoLocation || !autoLocation) && (
-                <Input 
-                  id="location" 
-                  name="location" 
-                  placeholder="e.g., Colombo 03" 
-                  required 
+                <Input
+                  id="location"
+                  name="location"
+                  placeholder="e.g., Colombo 03"
+                  required
                 />
               )}
 
               {/* Hidden input to submit auto-detected location */}
               {useAutoLocation && autoLocation && (
-                <input 
-                  type="hidden" 
-                  id="location" 
-                  name="location" 
-                  value={autoLocation} 
+                <input
+                  type="hidden"
+                  id="location"
+                  name="location"
+                  value={autoLocation}
                 />
+              )}
+
+              {/* Hidden inputs for coordinates if backend supports it later */}
+              {mapCoordinates && (
+                <>
+                  <input type="hidden" name="latitude" value={mapCoordinates.lat} />
+                  <input type="hidden" name="longitude" value={mapCoordinates.lng} />
+                </>
               )}
             </div>
 
@@ -362,7 +407,7 @@ export default function CreateListingPage() {
                     <SelectItem value="hambantota" data-district-item>Hambantota District</SelectItem>
                     <SelectItem value="jaffna" data-district-item>Jaffna District</SelectItem>
                     <SelectItem value="kalutara" data-district-item>Kalutara District</SelectItem>
-                     <SelectItem value="kurunegala" data-district-item>Kurunegala District</SelectItem>
+                    <SelectItem value="kurunegala" data-district-item>Kurunegala District</SelectItem>
                     <SelectItem value="kandy" data-district-item>Kandy District</SelectItem>
                     <SelectItem value="kegalle" data-district-item>Kegalle District</SelectItem>
                     <SelectItem value="kilinochchi" data-district-item>Kilinochchi District</SelectItem>
@@ -386,7 +431,7 @@ export default function CreateListingPage() {
                 <Input id="city" name="city" placeholder="e.g., Colombo, Kandy, Galle" />
               </div>
 
-                {/* <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="priority">Priority Level</Label>
                 <Select name="priority" defaultValue="low" required>
                   <SelectTrigger>
@@ -418,7 +463,7 @@ export default function CreateListingPage() {
               </div>
             </div>
 
-            
+
             <div className="space-y-2">
               <Label htmlFor="contact_phone">whatsapp Contact Number</Label>
               <Input id="whatsapp_contact" name="whatsapp_contact" type="tel" placeholder="e.g., +94123456789" />
