@@ -38,7 +38,7 @@ export function FilterSidebar({ currentType, currentCategory, currentSearch }: F
   }
 
   return (
-    <div className="bg-white rounded-lg p-4 space-y-4 sticky top-24">
+    <div className="bg-white rounded-lg p-4 space-y-4">
       {/* Search Bar */}
       <div className="pb-4 border-b">
         <label htmlFor="search" className="block text-sm font-semibold mb-2">
@@ -106,6 +106,43 @@ export function FilterSidebar({ currentType, currentCategory, currentSearch }: F
             </div>
           </div>
         </details>
+      </div>
+    </div>
+  )
+}
+
+export function InformationalCard() {
+  return (
+    <div className="bg-white rounded-lg p-5 shadow-sm">
+      <h3 className="font-bold text-[24px] mb-4">A Little Heads Up for Everyone</h3>
+      
+      {/* Instructions for Donors */}
+      <div className="mb-4">
+        <h4 className="font-semibold text-sm mb-2">Instructions for Donors</h4>
+        <ul className="space-y-1.5 text-xs text-gray-700 list-disc list-inside leading-relaxed">
+          <li>Review the fundraiser details carefully before donating.</li>
+          <li>Check the documents and information provided by the small business or individual.</li>
+          <li>Donate only through the official payment channels shown on the platform.</li>
+          <li>Do not send money directly to fundraisers' personal accounts.</li>
+          <li>Keep your payment confirmation for future reference.</li>
+          <li>Report any suspicious activity or mismatched information immediately.</li>
+          <li>Remember, we are only an intermediary platform — we do not directly verify every fundraiser.</li>
+        </ul>
+      </div>
+
+      {/* Instructions for Fundraisers */}
+      <div>
+        <h4 className="font-semibold text-sm mb-2">Instructions for Fundraisers</h4>
+        <ul className="space-y-1.5 text-xs text-gray-700 list-disc list-inside leading-relaxed">
+          <li>Provide accurate and honest information about your situation.</li>
+          <li>Upload supporting documents (business proof, damage photos, ID, etc.).</li>
+          <li>Clearly explain how the funds will be used for recovery.</li>
+          <li>Keep your fundraiser updates transparent and timely.</li>
+          <li>Do not attempt to create multiple or duplicate fundraisers for the same cause.</li>
+          <li>Respond promptly to donor questions or platform review requests.</li>
+          <li>Withdraw funds only through the secure platform process.</li>
+          <li>Any suspicious or fraudulent activity will result in immediate removal.</li>
+        </ul>
       </div>
     </div>
   )

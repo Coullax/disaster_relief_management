@@ -1,6 +1,6 @@
 import { getListings } from '@/lib/actions/listings'
 import { ListingCard } from '@/components/listing-card'
-import { FilterSidebar } from '@/components/filter-sidebar'
+import { FilterSidebar, InformationalCard } from '@/components/filter-sidebar'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
@@ -18,47 +18,43 @@ export default async function Home({
   const { listings, count } = await getListings({ page, search, category, type })
 
   const currentType = type || 'need'
-  const heading = currentType === 'need' ? 'People Needing Help' : 'People Offering Help'
-  const subheading = currentType === 'need' 
-    ? 'People who need your help. Contact them directly.' 
-    : 'People ready to help. Reach out to them.'
+  const heading = 'People Needing Help'
+  const subheading = 'Connect with those affected by disasters and provide direct assistance.'
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold">FloodRelief Hub</h1>
-            <Button asChild>
-              <Link href="/create-listing">Create Listing</Link>
-            </Button>
-          </div>
+      {/* Header with Logo and Hero Banner */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            {/* Logo and Title - Left Side */}
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <img 
+                  src="/branding/logo.png" 
+                  alt="DisasterRelief Management Logo" 
+                  className="h-22 w-auto"
+                />
+              </div>
+              <h1 className="text-3xl font-bold">CareBridge</h1>
+            </div>
 
-          {/* Simple Tabs */}
-          <div className="flex gap-2">
-            <Link href="/?type=need">
-              <button
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
-                  currentType === 'need'
-                    ? 'bg-gray-200 text-gray-900'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                I need help
-              </button>
-            </Link>
-            <Link href="/?type=offer">
-              <button
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
-                  currentType === 'offer'
-                    ? 'bg-gray-200 text-gray-900'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                I can help
-              </button>
-            </Link>
+            {/* Hero Banner - Right Side */}
+            <div className="md:col-span-2">
+              <div className="relative h-40 rounded-lg overflow-hidden shadow-lg">
+                <img 
+                  src="/branding/hero-banner.png" 
+                  alt="Disaster Relief Management - Resilience and Recovery" 
+                  className="w-full h-full object-cover"
+                />
+                {/* <div className="absolute inset-0 bg-gradient-to-r from-gray-900/30 to-transparent"></div>
+                <div className="absolute top-4 right-4 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                  </svg>
+                </div> */}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -66,18 +62,52 @@ export default async function Home({
       {/* Main Content */}
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar Filters */}
+          {/* Sidebar */}
           <aside className="lg:col-span-1">
-            <FilterSidebar 
-              currentType={currentType} 
-              currentCategory={category}
-              currentSearch={search}
-            />
+            <div className="sticky top-6 space-y-4">
+              <FilterSidebar 
+                currentType={currentType} 
+                currentCategory={category}
+                currentSearch={search}
+              />
+              <InformationalCard />
+            </div>
           </aside>
 
-          {/* Listings */}
+          {/* Main Listings */}
           <main className="lg:col-span-3">
-            {/* Header */}
+            {/* Tabs and Share Button */}
+            <div className="flex items-center justify-between mb-6 gap-4">
+              <div className="flex gap-2">
+                <Link href="/?type=need">
+                  <button
+                    className={`px-6 py-2.5 rounded font-medium transition-all ${
+                      currentType === 'need'
+                        ? 'bg-gray-800 text-white shadow-md'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    See who Needs Help
+                  </button>
+                </Link>
+                <Link href="/?type=offer">
+                  <button
+                    className={`px-6 py-2.5 rounded font-medium transition-all ${
+                      currentType === 'offer'
+                        ? 'bg-gray-800 text-white shadow-md'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    See who&apos;s Helping
+                  </button>
+                </Link>
+              </div>
+              <Button asChild className="bg-green-600 hover:bg-green-700 text-white font-semibold">
+                <Link href="/create-listing">Share Your Request</Link>
+              </Button>
+            </div>
+
+            {/* Section Header */}
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-1">{heading}</h2>
               <p className="text-gray-600 text-sm">{subheading}</p>
@@ -85,7 +115,7 @@ export default async function Home({
 
             {/* Listings */}
             {listings.length === 0 ? (
-              <div className="bg-white rounded-lg p-12 text-center">
+              <div className="bg-white rounded-lg p-12 text-center shadow-sm">
                 <p className="text-gray-500">No listings found</p>
                 {(search || category) && (
                   <p className="text-sm text-gray-400 mt-2">
