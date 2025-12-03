@@ -7,10 +7,52 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { MapPin, RefreshCw, X } from 'lucide-react'
 
 export default function CreateListingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [autoLocation, setAutoLocation] = useState<string>('')
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false)
+  const [locationError, setLocationError] = useState<string>('')
+  const [useAutoLocation, setUseAutoLocation] = useState(true)
+
+  const fetchLocation = () => {
+    setIsLoadingLocation(true)
+    setLocationError('')
+    
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser')
+      setIsLoadingLocation(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        const locationString = `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
+        setAutoLocation(locationString)
+        setIsLoadingLocation(false)
+        setUseAutoLocation(true)
+      },
+      (error) => {
+        setLocationError('Unable to retrieve your location. Please enter manually.')
+        setIsLoadingLocation(false)
+        console.error('Geolocation error:', error)
+      }
+    )
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchLocation()
+  }, [])
+
+  const handleCancelAutoLocation = () => {
+    setAutoLocation('')
+    setUseAutoLocation(false)
+    setLocationError('')
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-2xl">
@@ -76,7 +118,71 @@ export default function CreateListingPage() {
 
             <div className="space-y-2">
               <Label htmlFor="location">Location (City/District)</Label>
-              <Input id="location" name="location" placeholder="e.g., Colombo 03" required />
+              
+              {useAutoLocation && autoLocation && (
+                <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md mb-2">
+                  <MapPin className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-green-700 flex-1">
+                    <span className="font-bold">Location Found: </span>
+                    {autoLocation}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={fetchLocation}
+                      disabled={isLoadingLocation}
+                      className="h-7 px-2"
+                      title="Update location"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${isLoadingLocation ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCancelAutoLocation}
+                      className="h-7 px-2"
+                      title="Enter location manually"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {isLoadingLocation && !autoLocation && (
+                <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md mb-2">
+                  <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+                  <span className="text-sm text-blue-700">Fetching your location...</span>
+                </div>
+              )}
+
+              {locationError && (
+                <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md mb-2">
+                  <span className="text-sm text-yellow-700">{locationError}</span>
+                </div>
+              )}
+
+              {(!useAutoLocation || !autoLocation) && (
+                <Input 
+                  id="location" 
+                  name="location" 
+                  placeholder="e.g., Colombo 03" 
+                  required 
+                />
+              )}
+
+              {/* Hidden input to submit auto-detected location */}
+              {useAutoLocation && autoLocation && (
+                <input 
+                  type="hidden" 
+                  id="location" 
+                  name="location" 
+                  value={autoLocation} 
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
