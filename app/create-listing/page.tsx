@@ -25,6 +25,8 @@ export default function CreateListingPage() {
   const [useAutoLocation, setUseAutoLocation] = useState(true)
   const [description, setDescription] = useState('')
   const [mapCoordinates, setMapCoordinates] = useState<{ lat: number; lng: number } | null>(null)
+  const [city, setCity] = useState('')
+  const [district, setDistrict] = useState('')
 
   // We don't need textareaRef here as we access it by ID in handleBulletPoints
   // const textareaRef = useState<HTMLTextAreaElement | null>(null)[0]
@@ -100,6 +102,8 @@ export default function CreateListingPage() {
       const address = data.address
       console.log("address:", address)
       const locationParts = []
+      let detectedCity = ''
+      let detectedDistrict = ''
 
       if (address) {
         // Include all available address components
@@ -113,10 +117,14 @@ export default function CreateListingPage() {
           locationParts.push(address.suburb || address.neighbourhood)
         }
         if (address.city || address.town || address.village) {
-          locationParts.push(address.city || address.town || address.village)
+          const cityVal = address.city || address.town || address.village
+          locationParts.push(cityVal)
+          detectedCity = cityVal
         }
         if (address.state_district) {
           locationParts.push(address.state_district)
+          // Normalize district name (remove " District" suffix and lowercase)
+          detectedDistrict = address.state_district.replace(/ District$/i, '').toLowerCase()
         }
         if (address.state) {
           locationParts.push(address.state)
@@ -130,10 +138,14 @@ export default function CreateListingPage() {
         ? locationParts.join(', ')
         : (data.display_name ? data.display_name.split(',').slice(0, 3).join(',') : `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`)
 
-      return locationString
+      return { locationString, city: detectedCity, district: detectedDistrict }
     } catch (error) {
       console.error('Geocoding error:', error)
-      return `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
+      return {
+        locationString: `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`,
+        city: '',
+        district: ''
+      }
     }
   }
 
@@ -154,9 +166,12 @@ export default function CreateListingPage() {
         // Update map coordinates
         setMapCoordinates({ lat: latitude, lng: longitude })
 
-        const locationString = await reverseGeocode(latitude, longitude)
+        const { locationString, city, district } = await reverseGeocode(latitude, longitude)
 
         setAutoLocation(locationString)
+        if (city) setCity(city)
+        if (district) setDistrict(district)
+
         setIsLoadingLocation(false)
         setUseAutoLocation(true)
       },
@@ -188,8 +203,11 @@ export default function CreateListingPage() {
   const handleMapLocationSelect = async (pos: { lat: number; lng: number }) => {
     setMapCoordinates(pos)
     setIsLoadingLocation(true)
-    const locationString = await reverseGeocode(pos.lat, pos.lng)
+    const { locationString, city, district } = await reverseGeocode(pos.lat, pos.lng)
     setAutoLocation(locationString)
+    if (city) setCity(city)
+    if (district) setDistrict(district)
+
     setIsLoadingLocation(false)
     setUseAutoLocation(true)
   }
@@ -395,7 +413,7 @@ export default function CreateListingPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="type">District</Label>
-                <Select name="type" defaultValue="colombo" required>
+                <Select name="district" value={district} onValueChange={setDistrict} required>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select district" />
                   </SelectTrigger>
@@ -447,7 +465,13 @@ export default function CreateListingPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="city">City</Label>
-                <Input id="city" name="city" placeholder="e.g., Colombo, Kandy, Galle" />
+                <Input
+                  id="city"
+                  name="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="e.g., Colombo, Kandy, Galle"
+                />
               </div>
 
               {/* <div className="space-y-2">
