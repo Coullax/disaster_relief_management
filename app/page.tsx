@@ -1,5 +1,6 @@
 import { getListings } from '@/lib/actions/listings'
 import { ListingCard } from '@/components/listing-card'
+import { FilterSidebar } from '@/components/filter-sidebar'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
@@ -67,41 +68,11 @@ export default async function Home({
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Filters */}
           <aside className="lg:col-span-1">
-            <div className="bg-white rounded-lg p-4 space-y-4 sticky top-24">
-              {/* Category Filter */}
-              <details className="group">
-                <summary className="flex justify-between items-center cursor-pointer font-semibold text-sm">
-                  Category
-                  <span className="group-open:rotate-45 transition-transform">+</span>
-                </summary>
-                <div className="mt-3 space-y-2 text-sm">
-                  {['medical', 'shelter', 'transport', 'other'].map((cat) => (
-                    <Link key={cat} href={`/?type=${currentType}&category=${cat}`}>
-                      <div className={`p-2 rounded hover:bg-gray-100 capitalize ${category === cat ? 'bg-gray-100 font-medium' : ''}`}>
-                        {cat}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </details>
-
-              <div className="border-t pt-4">
-                {/* District Filter */}
-                <details className="group">
-                  <summary className="flex justify-between items-center cursor-pointer font-semibold text-sm">
-                    District
-                    <span className="group-open:rotate-45 transition-transform">+</span>
-                  </summary>
-                  <div className="mt-3 space-y-2 text-sm max-h-64 overflow-y-auto">
-                    <input 
-                      type="text" 
-                      placeholder="Search district..." 
-                      className="w-full px-3 py-2 border rounded-md text-sm"
-                    />
-                  </div>
-                </details>
-              </div>
-            </div>
+            <FilterSidebar 
+              currentType={currentType} 
+              currentCategory={category}
+              currentSearch={search}
+            />
           </aside>
 
           {/* Listings */}
@@ -116,6 +87,11 @@ export default async function Home({
             {listings.length === 0 ? (
               <div className="bg-white rounded-lg p-12 text-center">
                 <p className="text-gray-500">No listings found</p>
+                {(search || category) && (
+                  <p className="text-sm text-gray-400 mt-2">
+                    Try adjusting your search or filters
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -130,14 +106,14 @@ export default async function Home({
               <div className="mt-6 flex justify-center gap-2">
                 {page > 1 && (
                   <Button variant="outline" asChild>
-                    <Link href={`/?page=${page - 1}&type=${type}&category=${category}`}>
+                    <Link href={`/?page=${page - 1}&type=${type}&category=${category}&search=${search}`}>
                       Previous
                     </Link>
                   </Button>
                 )}
                 {count > page * 10 && (
                   <Button variant="outline" asChild>
-                    <Link href={`/?page=${page + 1}&type=${type}&category=${category}`}>
+                    <Link href={`/?page=${page + 1}&type=${type}&category=${category}&search=${search}`}>
                       Next
                     </Link>
                   </Button>
