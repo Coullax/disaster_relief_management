@@ -1,9 +1,6 @@
 import { getListings } from '@/lib/actions/listings'
 import { ListingCard } from '@/components/listing-card'
-import { SearchFilters } from '@/components/search-filters'
-import { ListingTypeTabs } from '@/components/listing-type-tabs'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 
 export default async function Home({
@@ -19,74 +16,137 @@ export default async function Home({
 
   const { listings, count } = await getListings({ page, search, category, type })
 
+  const currentType = type || 'need'
+  const heading = currentType === 'need' ? 'People Needing Help' : 'People Offering Help'
+  const subheading = currentType === 'need' 
+    ? 'People who need your help. Contact them directly.' 
+    : 'People ready to help. Reach out to them.'
+
   return (
-    <main className="container mx-auto py-8 px-4">
-      {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">FloodRelief Hub</h1>
-          <p className="text-muted-foreground">
-            Connecting those in need with those who can help.
-          </p>
-        </div>
-        <Button asChild size="lg">
-          <Link href="/create-listing">Request Help / Offer Help</Link>
-        </Button>
-      </div>
-
-      {/* Tabs for filtering by type */}
-      <div className="mb-6">
-        <ListingTypeTabs />
-      </div>
-
-      {/* Info Badge */}
-      <div className="mb-4 flex justify-center">
-        <Badge variant="secondary" className="text-xs">
-          📊 Listings with fewer views appear first to ensure fair visibility
-        </Badge>
-      </div>
-
-      {/* Search Filters */}
-      <SearchFilters />
-
-      {/* Listings Grid */}
-      {listings.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-xl font-semibold mb-2">No listings found</h3>
-          <p className="text-muted-foreground">
-            Try adjusting your search or filters.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="mb-4 text-sm text-muted-foreground text-center">
-            Showing {listings.length} of {count || 0} listings
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">FloodRelief Hub</h1>
+            <Button asChild>
+              <Link href="/create-listing">Create Listing</Link>
+            </Button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
+
+          {/* Simple Tabs */}
+          <div className="flex gap-2">
+            <Link href="/?type=need">
+              <button
+                className={`px-6 py-2 rounded-full font-medium transition-all ${
+                  currentType === 'need'
+                    ? 'bg-gray-200 text-gray-900'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                I need help
+              </button>
+            </Link>
+            <Link href="/?type=offer">
+              <button
+                className={`px-6 py-2 rounded-full font-medium transition-all ${
+                  currentType === 'offer'
+                    ? 'bg-gray-200 text-gray-900'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                I can help
+              </button>
+            </Link>
           </div>
-        </>
-      )}
-      
-      {/* Pagination */}
-      <div className="mt-8 flex justify-center gap-2">
-        {page > 1 && (
-          <Button variant="outline" asChild>
-            <Link href={`/?page=${page - 1}&search=${search}&category=${category}&type=${type}`}>
-              Previous
-            </Link>
-          </Button>
-        )}
-        {count && count > page * 10 && (
-          <Button variant="outline" asChild>
-            <Link href={`/?page=${page + 1}&search=${search}&category=${category}&type=${type}`}>
-              Next
-            </Link>
-          </Button>
-        )}
+        </div>
       </div>
-    </main>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar Filters */}
+          <aside className="lg:col-span-1">
+            <div className="bg-white rounded-lg p-4 space-y-4 sticky top-24">
+              {/* Category Filter */}
+              <details className="group">
+                <summary className="flex justify-between items-center cursor-pointer font-semibold text-sm">
+                  Category
+                  <span className="group-open:rotate-45 transition-transform">+</span>
+                </summary>
+                <div className="mt-3 space-y-2 text-sm">
+                  {['medical', 'shelter', 'transport', 'other'].map((cat) => (
+                    <Link key={cat} href={`/?type=${currentType}&category=${cat}`}>
+                      <div className={`p-2 rounded hover:bg-gray-100 capitalize ${category === cat ? 'bg-gray-100 font-medium' : ''}`}>
+                        {cat}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </details>
+
+              <div className="border-t pt-4">
+                {/* District Filter */}
+                <details className="group">
+                  <summary className="flex justify-between items-center cursor-pointer font-semibold text-sm">
+                    District
+                    <span className="group-open:rotate-45 transition-transform">+</span>
+                  </summary>
+                  <div className="mt-3 space-y-2 text-sm max-h-64 overflow-y-auto">
+                    <input 
+                      type="text" 
+                      placeholder="Search district..." 
+                      className="w-full px-3 py-2 border rounded-md text-sm"
+                    />
+                  </div>
+                </details>
+              </div>
+            </div>
+          </aside>
+
+          {/* Listings */}
+          <main className="lg:col-span-3">
+            {/* Header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-1">{heading}</h2>
+              <p className="text-gray-600 text-sm">{subheading}</p>
+            </div>
+
+            {/* Listings */}
+            {listings.length === 0 ? (
+              <div className="bg-white rounded-lg p-12 text-center">
+                <p className="text-gray-500">No listings found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {listings.map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {count && count > 10 && (
+              <div className="mt-6 flex justify-center gap-2">
+                {page > 1 && (
+                  <Button variant="outline" asChild>
+                    <Link href={`/?page=${page - 1}&type=${type}&category=${category}`}>
+                      Previous
+                    </Link>
+                  </Button>
+                )}
+                {count > page * 10 && (
+                  <Button variant="outline" asChild>
+                    <Link href={`/?page=${page + 1}&type=${type}&category=${category}`}>
+                      Next
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+      </div>
+    </div>
   )
 }

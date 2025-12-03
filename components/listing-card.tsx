@@ -2,28 +2,28 @@
 
 import Link from 'next/link'
 import { Listing } from '@/lib/actions/listings'
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, Calendar, ArrowRight, MessageCircle, Phone, Package } from 'lucide-react'
+import { MapPin, Phone, MessageCircle, User } from 'lucide-react'
 
 interface ListingCardProps {
   listing: Listing
 }
 
 export function ListingCard({ listing }: ListingCardProps) {
-  // Format phone number for WhatsApp
+  const isNeed = listing.type === 'need'
+
   const formatPhoneForWhatsApp = (phone: string) => {
-    // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, '')
-    // Add country code if not present (assuming Sri Lanka +94)
     if (!cleaned.startsWith('94')) {
       return `94${cleaned}`
     }
     return cleaned
   }
 
-  const handleWhatsAppClick = () => {
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.preventDefault()
     if (listing.contact_phone) {
       const whatsappNumber = formatPhoneForWhatsApp(listing.contact_phone)
       const message = encodeURIComponent(
@@ -33,102 +33,115 @@ export function ListingCard({ listing }: ListingCardProps) {
     }
   }
 
-  const isNeed = listing.type === 'need'
+  const getDaysAgo = (date: string) => {
+    const days = Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24))
+    if (days === 0) return 'Today'
+    if (days === 1) return '1 day ago'
+    return `${days} days ago`
+  }
 
   return (
-    <Card className={`group overflow-hidden flex flex-col h-full hover:shadow-lg transition-all duration-200 border-l-4 ${
-      isNeed ? 'border-l-red-500 hover:border-l-red-600' : 'border-l-green-500 hover:border-l-green-600'
-    }`}>
-      {/* Compact Header with Type Badge */}
-      <CardHeader className="p-4 pb-3 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <Badge
-            className={`font-semibold text-xs ${
-              isNeed 
-                ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-green-500 hover:bg-green-600'
-            }`}
-          >
-            {isNeed ? '🆘 NEED HELP' : '🤝 OFFERING'}
-          </Badge>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="capitalize text-xs font-medium">
-              <Package className="w-3 h-3 mr-1" />
-              {listing.category}
-            </Badge>
-            {listing.view_count > 0 && (
-              <Badge variant="secondary" className="text-xs">
-                👁️ {listing.view_count}
+    <Card className="p-4 hover:shadow-md transition-shadow bg-white">
+      <div className="flex gap-4">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+            isNeed ? 'bg-orange-100' : 'bg-blue-100'
+          }`}>
+            <User className={`w-6 h-6 ${isNeed ? 'text-orange-600' : 'text-blue-600'}`} />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Badges and Meta */}
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge className="bg-yellow-400 text-black hover:bg-yellow-500 font-semibold text-xs px-2 py-0.5">
+                {isNeed ? 'HELPER' : 'VOLUNTEER'}
               </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Title - Most Important */}
-        <h3 className="font-bold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-          {listing.title}
-        </h3>
-      </CardHeader>
-
-      {/* Content - Essential Info Only */}
-      <CardContent className="p-4 pt-0 flex-grow space-y-2.5">
-        {/* Description */}
-        <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-          {listing.description}
-        </p>
-
-        {/* Key Details Grid */}
-        <div className="space-y-2 pt-1">
-          {/* Location */}
-          <div className="flex items-center text-sm font-medium bg-muted/50 rounded-md p-2">
-            <MapPin className="w-4 h-4 mr-2 text-primary flex-shrink-0" />
-            <span className="line-clamp-1">{listing.location}</span>
-          </div>
-
-          {/* Contact Phone */}
-          {listing.contact_phone && (
-            <div className="flex items-center text-sm font-medium bg-muted/30 rounded-md p-2">
-              <Phone className="w-4 h-4 mr-2 text-green-600 flex-shrink-0" />
-              <span className="line-clamp-1">{listing.contact_phone}</span>
+              {listing.contact_phone && (
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-200 font-medium text-xs px-2 py-0.5">
+                  ✓ VOLUNTEER / FREE
+                </Badge>
+              )}
             </div>
-          )}
+            <div className="text-right flex-shrink-0">
+              <div className="text-xs font-medium text-gray-900">
+                {listing.profiles?.full_name || 'LIGHTUP LANKA'}
+              </div>
+              <div className="text-xs text-gray-500">
+                {getDaysAgo(listing.created_at)}
+              </div>
+            </div>
+          </div>
 
-          {/* Date */}
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Calendar className="w-3 h-3 mr-1.5" />
-            Posted: {new Date(listing.created_at).toLocaleDateString()}
+          {/* Title */}
+          <Link href={`/listings/${listing.id}`}>
+            <h3 className="font-bold text-base mb-1 hover:text-blue-600 transition-colors line-clamp-1">
+              {listing.title}
+            </h3>
+          </Link>
+
+          {/* Description */}
+          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+            {listing.description}
+          </p>
+
+          {/* Location and Actions */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            {/* Location */}
+            <div className="flex items-center text-sm text-gray-600">
+              <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+              <span className="line-clamp-1">{listing.location}</span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              {listing.contact_phone && (
+                <>
+                  {/* WhatsApp Button */}
+                  <Button
+                    onClick={handleWhatsAppClick}
+                    size="sm"
+                    className="bg-green-500 hover:bg-green-600 text-white h-9 w-9 p-0 rounded-full"
+                    title="Contact via WhatsApp"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                  </Button>
+
+                  {/* Call Now Button */}
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="border-gray-300 hover:bg-gray-100 h-9 px-4 font-semibold text-xs"
+                  >
+                    <a href={`tel:${listing.contact_phone}`}>
+                      <Phone className="w-3 h-3 mr-1.5" />
+                      CALL NOW
+                    </a>
+                  </Button>
+                </>
+              )}
+
+              {/* View Details */}
+              {!listing.contact_phone && (
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="h-9 px-4"
+                >
+                  <Link href={`/listings/${listing.id}`}>
+                    View Details
+                  </Link>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </CardContent>
-
-      {/* Action Buttons */}
-      <CardFooter className="p-4 pt-0 flex gap-2">
-        {/* WhatsApp Contact Button */}
-        {listing.contact_phone && (
-          <Button
-            onClick={handleWhatsAppClick}
-            variant="outline"
-            size="sm"
-            className="flex-1 bg-green-50 hover:bg-green-500 hover:text-white border-green-500 text-green-700 font-semibold transition-all duration-200"
-          >
-            <MessageCircle className="w-4 h-4 mr-1.5" />
-            Contact
-          </Button>
-        )}
-        
-        {/* View Details Button */}
-        <Button 
-          asChild 
-          size="sm"
-          className={`${listing.contact_phone ? 'flex-1' : 'w-full'} font-semibold transition-all duration-200`}
-          variant={isNeed ? 'default' : 'secondary'}
-        >
-          <Link href={`/listings/${listing.id}`}>
-            Details
-            <ArrowRight className="w-4 h-4 ml-1.5" />
-          </Link>
-        </Button>
-      </CardFooter>
+      </div>
     </Card>
   )
 }

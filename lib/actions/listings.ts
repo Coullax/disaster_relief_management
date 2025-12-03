@@ -3,7 +3,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/types/database.types'
 
-export type Listing = Database['public']['Tables']['listings']['Row']
+export type Listing = Database['public']['Tables']['listings']['Row'] & {
+  profiles?: {
+    full_name: string | null
+  } | null
+}
 
 export async function getListings({
   page = 1,
@@ -26,7 +30,7 @@ export async function getListings({
 
   let query = supabase
     .from('listings')
-    .select('*', { count: 'exact' })
+    .select('*, profiles(full_name)', { count: 'exact' })
     .eq('status', 'active')
     // Sort by view_count ascending (lowest first), then by created_at descending
     .order('view_count', { ascending: true })
