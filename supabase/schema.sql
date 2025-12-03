@@ -3,8 +3,10 @@ create extension if not exists "uuid-ossp";
 
 -- Profiles table (extends auth.users)
 create table public.profiles (
-  id uuid references auth.users on delete cascade not null primary key,
+  id uuid default uuid_generate_v4() primary key, -- decoupled from auth.users
   full_name text,
+  email text unique, -- added for contact matching
+  phone text, -- added for contact matching
   avatar_url text,
   bio text,
   location text,
@@ -16,7 +18,7 @@ create table public.profiles (
 -- Listings table
 create table public.listings (
   id uuid default uuid_generate_v4() primary key,
-  user_id uuid references public.profiles(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade, -- nullable for anonymous listings
   title text not null,
   description text not null,
   type text not null check (type in ('need', 'offer')),
@@ -62,11 +64,11 @@ create policy "Public profiles are viewable by everyone."
 
 create policy "Users can insert their own profile."
   on public.profiles for insert
-  with check ( auth.uid() = id );
+  with check ( true ); -- Allow anyone (server action handles logic)
 
 create policy "Users can update own profile."
   on public.profiles for update
-  using ( auth.uid() = id );
+  using ( auth.uid() = id ); -- Only if they are actually logged in and mapped
 
 -- Listings
 alter table public.listings enable row level security;
@@ -75,9 +77,9 @@ create policy "Listings are viewable by everyone."
   on public.listings for select
   using ( true );
 
-create policy "Authenticated users can create listings."
+create policy "Anyone can create listings."
   on public.listings for insert
-  with check ( auth.role() = 'authenticated' );
+  with check ( true );
 
 create policy "Users can update own listings."
   on public.listings for update
@@ -107,3 +109,17 @@ create policy "Authenticated users can create tickets."
 -- insert into storage.buckets (id, name) values ('media', 'media');
 -- create policy "Media is public" on storage.objects for select using ( bucket_id = 'media' );
 -- create policy "Users can upload media" on storage.objects for insert with check ( bucket_id = 'media' and auth.role() = 'authenticated' );
+
+-- Trigger to create profile on signup
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, full_name, avatar_url)
+  values (new.id, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();

@@ -90,6 +90,8 @@ export default function CreateListingPage() {
               </div>
             </div>
 
+
+
             <div className="space-y-2">
               <Label htmlFor="media">Photos (Optional)</Label>
               <Input id="media" name="media" type="file" multiple accept="image/*" />
