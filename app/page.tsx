@@ -43,7 +43,7 @@ export default async function Home({
             <div className="w-full lg:col-span-3">
               <div className="relative rounded-lg overflow-hidden shadow-lg">
                 <img 
-                  src="/branding/herobanner1.jpg"
+                  src="/branding/hero-banner.png"
                   alt="Disaster Relief Management - Resilience and Recovery" 
                   className="w-full h-48 lg:h-[267px] object-cover"
                 />
@@ -78,7 +78,7 @@ export default async function Home({
               <div className="flex gap-2">
                 <Link href="/?type=need">
                   <button
-                    className={`px-6 py-2.5 rounded-4xl font-medium transition-all text-[16px] ${
+                    className={`px-6 py-2.5 cursor-pointer rounded-4xl font-medium transition-all text-[16px] ${
                       currentType === 'need'
                         ? 'bg-gray-800 text-white shadow-md'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -89,7 +89,7 @@ export default async function Home({
                 </Link>
                 <Link href="/?type=offer">
                   <button
-                    className={`px-6 py-2.5 rounded-4xl font-medium transition-all ${
+                    className={`px-6 py-2.5 rounded-4xl font-medium transition-all cursor-pointer ${
                       currentType === 'offer'
                         ? 'bg-gray-800 text-white shadow-md'
                         : 'bg-[#F6F6F6] text-[#4A5565] border border-gray-300 hover:bg-gray-50'
