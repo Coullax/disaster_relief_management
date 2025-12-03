@@ -19,43 +19,40 @@ export default async function Home({
 
   const currentType = type || 'need'
   const heading = 'People Needing Help'
-  const subheading = 'Connect with those affected by disasters and provide direct assistance.'
+  const subheading = 'People who need your help. Contact them directly.'
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F4FFF8' }}>
+    <div className="min-h-screen bg-[#f4fff8]">
       {/* Header with Logo and Hero Banner */}
-      <div className="border-b" style={{ backgroundColor: '#F4FFF8' }}>
+      <div className="bg-[#f4fff8] border-b">
         <div className="container mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-            {/* Logo and Title - Left Side */}
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-3 mb-4">
+
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 w-full">
+            <div className="flex flex-col justify-end lg:col-span-1 text-center lg:text-left items-center lg:items-start">
+              <div className="flex gap-3 mb-4">
                 <img 
-                  src="/branding/logo.png" 
+                  src="/branding/logo1.png"
                   alt="DisasterRelief Management Logo" 
-                  className="h-22 w-auto"
+                  className="w-24 h-24 lg:w-32 lg:h-32 w-auto"
                 />
               </div>
-              <h1 className="text-3xl font-bold">CareBridge</h1>
+              <h1 className="text-3xl lg:text-[51.71px] font-[700] lg:leading-[46px] leading-tight">FloodRelief<br />Hub</h1>
             </div>
 
-            {/* Hero Banner - Right Side */}
-            <div className="md:col-span-2">
-              <div className="relative h-40 rounded-lg overflow-hidden shadow-lg">
+            <div className="w-full lg:col-span-3">
+              <div className="relative rounded-lg overflow-hidden shadow-lg">
                 <img 
-                  src="/branding/hero-banner.png" 
+                  src="/branding/hero-banner.png"
                   alt="Disaster Relief Management - Resilience and Recovery" 
-                  className="w-full h-full object-cover"
+                  className="w-full h-48 lg:h-[267px] object-cover"
                 />
-                {/* <div className="absolute inset-0 bg-gradient-to-r from-gray-900/30 to-transparent"></div>
-                <div className="absolute top-4 right-4 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
-                  </svg>
-                </div> */}
               </div>
             </div>
           </div>
+
+
+
         </div>
       </div>
 
@@ -81,7 +78,7 @@ export default async function Home({
               <div className="flex gap-2">
                 <Link href="/?type=need">
                   <button
-                    className={`px-6 py-2.5 rounded font-medium transition-all ${
+                    className={`px-6 py-2.5 cursor-pointer rounded-4xl font-medium transition-all text-[16px] ${
                       currentType === 'need'
                         ? 'bg-gray-800 text-white shadow-md'
                         : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
@@ -92,10 +89,10 @@ export default async function Home({
                 </Link>
                 <Link href="/?type=offer">
                   <button
-                    className={`px-6 py-2.5 rounded font-medium transition-all ${
+                    className={`px-6 py-2.5 rounded-4xl font-medium transition-all cursor-pointer ${
                       currentType === 'offer'
                         ? 'bg-gray-800 text-white shadow-md'
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        : 'bg-[#F6F6F6] text-[#4A5565] border border-gray-300 hover:bg-gray-50'
                     }`}
                   >
                     See who&apos;s Helping
@@ -110,7 +107,7 @@ export default async function Home({
             {/* Section Header */}
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-1">{heading}</h2>
-              <p className="text-gray-600 text-sm">{subheading}</p>
+              <p className="text-gray-600 text-[14px]">{subheading}</p>
             </div>
 
             {/* Listings */}
