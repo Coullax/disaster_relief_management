@@ -1,6 +1,7 @@
 'use client'
 
 import { createListing } from '@/lib/actions/create-listing'
+import { uploadToB2 } from '@/lib/actions/storage'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -8,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useState, useEffect, useRef } from 'react'
-import { MapPin, RefreshCw, X, List } from 'lucide-react'
+import { MapPin, RefreshCw, X, List, Upload, Image as ImageIcon, FileVideo, Trash2, Loader2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
 
 // Dynamically import LocationPicker to avoid SSR issues with Leaflet
 const LocationPicker = dynamic(() => import('@/components/ui/location-picker'), {
@@ -30,6 +32,37 @@ export default function CreateListingPage() {
   const [city, setCity] = useState('')
   const [district, setDistrict] = useState('')
   const [title, setTitle] = useState('')
+
+  // Media Upload State
+  const [mediaFiles, setMediaFiles] = useState<File[]>([])
+  const [mediaPreviews, setMediaPreviews] = useState<{ url: string, type: 'image' | 'video' }[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files)
+      setMediaFiles(prev => [...prev, ...newFiles])
+
+      // Generate previews
+      newFiles.forEach(file => {
+        const url = URL.createObjectURL(file)
+        setMediaPreviews(prev => [...prev, {
+          url,
+          type: file.type.startsWith('image/') ? 'image' : 'video'
+        }])
+      })
+    }
+  }
+
+  const removeFile = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index))
+    setMediaPreviews(prev => {
+      // Revoke object URL to avoid memory leaks
+      URL.revokeObjectURL(prev[index].url)
+      return prev.filter((_, i) => i !== index)
+    })
+  }
 
   const reverseGeocode = async (latitude: number, longitude: number) => {
     try {
@@ -146,22 +179,20 @@ export default function CreateListingPage() {
             <button
               type="button"
               onClick={() => setSelectedType('need')}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
-                selectedType === 'need'
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${selectedType === 'need'
+                ? 'bg-black text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               I need Help
             </button>
             <button
               type="button"
               onClick={() => setSelectedType('offer')}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
-                selectedType === 'offer'
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${selectedType === 'offer'
+                ? 'bg-black text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               I want to Help
             </button>
@@ -173,19 +204,54 @@ export default function CreateListingPage() {
               if (isSubmittingRef.current) return
               isSubmittingRef.current = true
               setIsSubmitting(true)
-              formData.set('type', selectedType)
-              await createListing(formData)
-              setIsSubmitting(false)
 
               try {
-                // If we have map coordinates, append them to the form data or ensure they are part of the location string
-                // For now, we rely on the location string in the input
+                // Upload files first
+                const uploadedUrls: string[] = []
+                if (mediaFiles.length > 0) {
+                  setIsUploading(true)
+                  for (const file of mediaFiles) {
+                    // Generate unique filename
+                    const timestamp = Date.now()
+                    const ext = file.name.split('.').pop()
+                    const filename = `uploads/${timestamp}-${Math.random().toString(36).substring(7)}.${ext}`
+
+                    const uploadFormData = new FormData()
+                    uploadFormData.append('file', file)
+                    uploadFormData.append('filename', filename)
+
+                    const result = await uploadToB2(uploadFormData)
+
+                    if (!result.success || !result.publicUrl) {
+                      console.error('Upload failed for file:', file.name, result.error)
+                      continue
+                    }
+
+                    uploadedUrls.push(result.publicUrl)
+                  }
+                  setIsUploading(false)
+                }
+
+                // Append URLs to formData
+                uploadedUrls.forEach(url => {
+                  formData.append('media_urls', url)
+                })
+
+                formData.set('type', selectedType)
+
+                // If we have map coordinates, append them
+                if (mapCoordinates) {
+                  formData.set('latitude', mapCoordinates.lat.toString())
+                  formData.set('longitude', mapCoordinates.lng.toString())
+                }
+
                 await createListing(formData)
               } catch (error) {
                 console.error("Submission error:", error)
               } finally {
                 isSubmittingRef.current = false
                 setIsSubmitting(false)
+                setIsUploading(false)
               }
             }}
             className="space-y-5"
@@ -265,6 +331,58 @@ export default function CreateListingPage() {
               </p>
             </div>
 
+            {/* Media Upload */}
+            <div>
+              <Label className="text-sm font-normal mb-3 block">
+                Upload Images/Videos
+              </Label>
+
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                {mediaPreviews.map((preview, index) => (
+                  <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border">
+                    {preview.type === 'image' ? (
+                      <Image
+                        src={preview.url}
+                        alt="Preview"
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <video src={preview.url} className="w-full h-full object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full hover:bg-black/70 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-500 transition-colors bg-gray-50"
+                >
+                  <Upload className="w-6 h-6 mb-1" />
+                  <span className="text-xs">Add Media</span>
+                </button>
+              </div>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                multiple
+                accept="image/*,video/*"
+                onChange={handleFileSelect}
+              />
+              <p className="text-xs text-gray-500">
+                Supported formats: JPG, PNG, MP4. Max 100MB per file.
+              </p>
+            </div>
+
             {/* Location Section */}
             <div>
               <Label className="text-sm font-normal mb-3 block">
@@ -335,7 +453,7 @@ export default function CreateListingPage() {
                 </Label>
                 <Select name="district" value={district} onValueChange={setDistrict} required>
                   <SelectTrigger className="w-full text-sm">
-                   <SelectValue placeholder="Select District" />
+                    <SelectValue placeholder="Select District" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[300px]">
                     <div className="px-2 py-2 sticky top-0 bg-background border-b w-full z-50">
@@ -461,7 +579,12 @@ export default function CreateListingPage() {
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-base rounded-md"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Creating...' : 'Share Your Request'}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {isUploading ? 'Uploading Media...' : 'Creating Listing...'}
+                </span>
+              ) : 'Share Your Request'}
             </Button>
           </form>
         </div>
