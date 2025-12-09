@@ -5,18 +5,21 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { 
-  MapPin, 
-  Calendar, 
-  Mail, 
-  Phone, 
-  User, 
-  ArrowLeft, 
+import {
+  MapPin,
+  Calendar,
+  Mail,
+  Phone,
+  User,
+  ArrowLeft,
   MessageCircle,
   Package,
   Eye,
-  Clock
+  Clock,
+  ImageIcon,
+  Play
 } from 'lucide-react'
+import Image from 'next/image'
 
 interface ListingDetailClientProps {
   listing: any
@@ -48,9 +51,9 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto py-6 px-4 max-w-4xl">
         {/* Back Button */}
-        <Button 
-          variant="ghost" 
-          onClick={() => router.back()} 
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
           className="mb-4 -ml-2"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -58,18 +61,16 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
         </Button>
 
         {/* Main Card */}
-        <Card className={`border-l-4 shadow-lg ${
-          isNeed ? 'border-l-red-500' : 'border-l-green-500'
-        }`}>
+        <Card className={`border-l-4 shadow-lg ${isNeed ? 'border-l-red-500' : 'border-l-green-500'
+          }`}>
           <CardHeader className="pb-4">
             {/* Type and Category Badges */}
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <Badge
-                className={`font-semibold ${
-                  isNeed 
-                    ? 'bg-red-500 hover:bg-red-600' 
+                className={`font-semibold ${isNeed
+                    ? 'bg-red-500 hover:bg-red-600'
                     : 'bg-green-500 hover:bg-green-600'
-                }`}
+                  }`}
               >
                 {isNeed ? '🆘 NEED HELP' : '🤝 OFFERING HELP'}
               </Badge>
@@ -122,6 +123,49 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
 
             <Separator />
 
+            {/* Media Gallery */}
+            {listing.media_urls && listing.media_urls.length > 0 && (
+              <>
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5" />
+                    Media Gallery
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {listing.media_urls.map((url: string, index: number) => {
+                      // Simple check for video extensions
+                      const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i)
+
+                      return (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted group border">
+                          {isVideo ? (
+                            <video
+                              src={url}
+                              controls
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="relative w-full h-full">
+                              <Image
+                                src={url}
+                                alt={`Listing media ${index + 1}`}
+                                fill
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                sizes="(max-width: 768px) 50vw, 33vw"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
+            <Separator />
+
             {/* Contact Information */}
             <div>
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -133,8 +177,8 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
                     <Phone className="w-5 h-5 text-green-600 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">Phone</p>
-                      <a 
-                        href={`tel:${listing.contact_phone}`} 
+                      <a
+                        href={`tel:${listing.contact_phone}`}
                         className="font-semibold text-green-700 dark:text-green-400 hover:underline break-all"
                       >
                         {listing.contact_phone}
@@ -142,14 +186,14 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
                     </div>
                   </div>
                 )}
-                
+
                 {listing.contact_email && (
                   <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
                     <Mail className="w-5 h-5 text-blue-600 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-muted-foreground mb-1">Email</p>
-                      <a 
-                        href={`mailto:${listing.contact_email}`} 
+                      <a
+                        href={`mailto:${listing.contact_email}`}
                         className="font-semibold text-blue-700 dark:text-blue-400 hover:underline break-all"
                       >
                         {listing.contact_email}
@@ -201,7 +245,7 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
                   Contact via WhatsApp
                 </Button>
               )}
-              
+
               {listing.contact_email && (
                 <Button
                   asChild
