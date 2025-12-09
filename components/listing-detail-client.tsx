@@ -5,21 +5,19 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { toast } from 'sonner'
+import MediaGallery from './media-gallery'
 import {
   MapPin,
   Calendar,
   Mail,
   Phone,
-  User,
   ArrowLeft,
-  MessageCircle,
-  Package,
-  Eye,
-  Clock,
-  ImageIcon,
-  Play
+  FileText,
+  User,
+  Share2,
+  Package
 } from 'lucide-react'
-import Image from 'next/image'
 
 interface ListingDetailClientProps {
   listing: any
@@ -47,233 +45,204 @@ export function ListingDetailClient({ listing }: ListingDetailClientProps) {
     }
   }
 
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: listing.title,
+          text: `Check out this listing: ${listing.title}`,
+          url: window.location.href,
+        })
+      } else {
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success('Link copied to clipboard!')
+      }
+    } catch (error) {
+      console.error('Error sharing:', error)
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto py-6 px-4 max-w-4xl">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-4 -ml-2"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Listings
-        </Button>
+    <div className="min-h-screen bg-white pb-20">
+      <div className="container mx-auto py-6 px-4 max-w-3xl">
+        {/* Navigation */}
+        <div className="flex items-center justify-between mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="text-gray-600 hover:text-gray-900 -ml-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
 
-        {/* Main Card */}
-        <Card className={`border-l-4 shadow-lg ${isNeed ? 'border-l-red-500' : 'border-l-green-500'
-          }`}>
-          <CardHeader className="pb-4">
-            {/* Type and Category Badges */}
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <Badge
-                className={`font-semibold ${isNeed
-                    ? 'bg-red-500 hover:bg-red-600'
-                    : 'bg-green-500 hover:bg-green-600'
-                  }`}
-              >
-                {isNeed ? '🆘 NEED HELP' : '🤝 OFFERING HELP'}
-              </Badge>
-              <Badge variant="outline" className="capitalize">
-                <Package className="w-3 h-3 mr-1" />
-                {listing.category}
-              </Badge>
-              <Badge variant="secondary">
-                <Eye className="w-3 h-3 mr-1" />
-                {listing.view_count || 0} views
-              </Badge>
-            </div>
+          <div className="flex gap-2">
+            <Badge
+              className={`font-semibold px-4 py-1.5 rounded-full ${isNeed
+                ? 'bg-red-500 hover:bg-red-600'
+                : 'bg-green-500 hover:bg-green-600'
+                }`}
+            >
+              {isNeed ? 'Need Help' : 'Offering Help'}
+            </Badge>
+            <Badge variant="outline" className="capitalize px-4 py-1.5 rounded-full border-gray-300 gap-1.5">
+              <Package className="w-3.5 h-3.5" />
+              {listing.category}
+            </Badge>
+          </div>
+        </div>
 
-            {/* Title */}
-            <CardTitle className="text-2xl md:text-3xl font-bold leading-tight">
-              {listing.title}
-            </CardTitle>
-          </CardHeader>
+        {/* Title Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+            {listing.title}
+          </h1>
 
-          <CardContent className="space-y-6">
-            {/* Quick Info Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg p-3">
-                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                <span className="font-medium">{listing.location}</span>
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 text-gray-500 text-sm">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-orange-500" />
+              <div>
+                <p className="text-xs text-gray-400">Location</p>
+                <p className="font-medium text-gray-700">{listing.location}</p>
               </div>
-              <div className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg p-3">
-                <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
-                <span className="font-medium">
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-orange-500" />
+              <div>
+                <p className="text-xs text-gray-400">Posted on</p>
+                <p className="font-medium text-gray-700">
                   {new Date(listing.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
                     month: 'long',
-                    day: 'numeric'
+                    day: 'numeric',
+                    year: 'numeric'
                   })}
-                </span>
+                </p>
               </div>
             </div>
+            <Button variant="outline" size="sm" className="ml-auto rounded-full gap-2 hidden sm:flex" onClick={handleShare}>
+              <Share2 className="w-3 h-3" />
+              Share
+            </Button>
+          </div>
+        </div>
 
-            <Separator />
+        <Separator className="mb-10" />
 
-            {/* Description Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                📋 Description
-              </h3>
-              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+        <div className="space-y-12">
+          {/* Description Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="rounded-lg bg-orange-100 p-2.5">
+                <FileText className="h-5 w-5 text-orange-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Description</h2>
+            </div>
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {listing.description}
               </p>
             </div>
+          </section>
 
-            <Separator />
+          {/* Media Gallery */}
+          {listing.media_urls && listing.media_urls.length > 0 && (
+            <MediaGallery mediaUrls={listing.media_urls} />
+          )}
 
-            {/* Media Gallery */}
-            {listing.media_urls && listing.media_urls.length > 0 && (
-              <>
-                <div>
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5" />
-                    Media Gallery
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {listing.media_urls.map((url: string, index: number) => {
-                      // Simple check for video extensions
-                      const isVideo = url.match(/\.(mp4|webm|ogg|mov)$/i)
-
-                      return (
-                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted group border">
-                          {isVideo ? (
-                            <video
-                              src={url}
-                              controls
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="relative w-full h-full">
-                              <Image
-                                src={url}
-                                alt={`Listing media ${index + 1}`}
-                                fill
-                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                sizes="(max-width: 768px) 50vw, 33vw"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-                <Separator />
-              </>
-            )}
-
-            <Separator />
-
-            {/* Contact Information */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                📞 Contact Information
-              </h3>
-              <div className="space-y-3">
-                {listing.contact_phone && (
-                  <div className="flex items-center gap-3 bg-green-50 dark:bg-green-950/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                    <Phone className="w-5 h-5 text-green-600 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-1">Phone</p>
-                      <a
-                        href={`tel:${listing.contact_phone}`}
-                        className="font-semibold text-green-700 dark:text-green-400 hover:underline break-all"
-                      >
-                        {listing.contact_phone}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {listing.contact_email && (
-                  <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                    <Mail className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground mb-1">Email</p>
-                      <a
-                        href={`mailto:${listing.contact_email}`}
-                        className="font-semibold text-blue-700 dark:text-blue-400 hover:underline break-all"
-                      >
-                        {listing.contact_email}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {!listing.contact_email && !listing.contact_phone && (
-                  <p className="text-sm text-muted-foreground text-center py-4 bg-muted/50 rounded-lg">
-                    No direct contact information provided
-                  </p>
-                )}
+          {/* Contact Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="rounded-lg bg-orange-100 p-2.5">
+                <Phone className="h-5 w-5 text-orange-600" />
               </div>
+              <h2 className="text-xl font-bold text-gray-900">Contact Seller</h2>
             </div>
 
-            <Separator />
-
-            {/* Posted By Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                👤 Posted By
-              </h3>
-              <div className="flex items-center gap-4 bg-muted/50 rounded-lg p-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <User className="w-6 h-6 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-base">
-                    {listing.profiles?.full_name || 'Anonymous User'}
-                  </p>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    Member since {new Date(listing.created_at).getFullYear()}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-4 flex flex-col sm:flex-row gap-3">
+            <div className="grid gap-4">
               {listing.contact_phone && (
-                <Button
-                  onClick={handleWhatsAppClick}
-                  size="lg"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold"
-                >
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Contact via WhatsApp
-                </Button>
+                <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-0.5">Phone</p>
+                      <p className="font-semibold text-gray-900">{listing.contact_phone}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => window.location.href = `tel:${listing.contact_phone}`}
+                    variant="ghost"
+                    className="font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+                  >
+                    Call
+                  </Button>
+                </div>
               )}
 
               {listing.contact_email && (
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="flex-1 font-semibold"
-                >
-                  <a href={`mailto:${listing.contact_email}`}>
-                    <Mail className="w-5 h-5 mr-2" />
-                    Send Email
-                  </a>
+                <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-0.5">Email</p>
+                      <p className="font-semibold text-gray-900">{listing.contact_email}</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => window.location.href = `mailto:${listing.contact_email}`}
+                    variant="ghost"
+                    className="font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                  >
+                    Message
+                  </Button>
+                </div>
+              )}
+
+              {listing.contact_phone && (
+                <Button className="w-full bg-[#1e1b4b] hover:bg-[#1e1b4b]/90 text-white h-12 rounded-xl mt-2 font-semibold" onClick={handleWhatsAppClick}>
+                  Contact via WhatsApp
                 </Button>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </section>
 
-        {/* Additional Info Card */}
-        <Card className="mt-4">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Eye className="w-4 h-4" />
-              <span>
-                This listing has been viewed <strong>{listing.view_count || 0}</strong> times
-              </span>
+          <Separator />
+
+          {/* Posted By Section */}
+          <section>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="rounded-lg bg-gray-100 p-2.5">
+                <User className="h-5 w-5 text-gray-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Posted By</h2>
             </div>
-          </CardContent>
-        </Card>
+
+            <Card className="shadow-sm border-gray-200">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-lg select-none">
+                    {listing.profiles?.full_name ? listing.profiles.full_name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div>
+                    <p className="font-bold text-lg text-gray-900">
+                      {listing.profiles?.full_name || 'Anonymous User'}
+                    </p>
+                    <p className="text-sm text-gray-500 flex items-center gap-1.5 mt-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                      Member since {new Date(listing.created_at).getFullYear()}
+                    </p>
+                  </div>
+                  <Button variant="ghost" className="ml-auto text-sm font-medium">
+                    View Profile
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </section>
+        </div>
       </div>
     </div>
   )
