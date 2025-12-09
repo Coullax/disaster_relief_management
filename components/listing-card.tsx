@@ -24,6 +24,7 @@ export function ListingCard({ listing }: ListingCardProps) {
 
   const handleWhatsAppClick = (e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation() // Prevent card click
     if (listing.contact_phone) {
       const whatsappNumber = formatPhoneForWhatsApp(listing.contact_phone)
       const message = encodeURIComponent(
@@ -41,13 +42,12 @@ export function ListingCard({ listing }: ListingCardProps) {
   }
 
   return (
-    <Card className="p-4 hover:shadow-md transition-shadow bg-white">
+    <Card className="relative p-4 hover:shadow-md transition-shadow bg-white group">
       <div className="flex gap-4">
         {/* Avatar */}
         <div className="flex-shrink-0">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-            isNeed ? 'bg-orange-100' : 'bg-blue-100'
-          }`}>
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isNeed ? 'bg-orange-100' : 'bg-blue-100'
+            }`}>
             <User className={`w-6 h-6 ${isNeed ? 'text-orange-600' : 'text-blue-600'}`} />
           </div>
         </div>
@@ -76,12 +76,13 @@ export function ListingCard({ listing }: ListingCardProps) {
             </div>
           </div>
 
-          {/* Title */}
-          <Link href={`/listings/${listing.id}`}>
-            <h3 className="font-bold text-base mb-1 hover:text-blue-600 transition-colors line-clamp-1">
+          {/* Title with Stretched Link */}
+          <h3 className="font-bold text-base mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">
+            <Link href={`/listings/${listing.id}`} className="before:absolute before:inset-0 outline-none rounded-lg">
+              <span className="absolute inset-0" aria-hidden="true" />
               {listing.title}
-            </h3>
-          </Link>
+            </Link>
+          </h3>
 
           {/* Description */}
           <p className="text-sm text-gray-600 mb-2 line-clamp-2">
@@ -96,8 +97,8 @@ export function ListingCard({ listing }: ListingCardProps) {
               <span className="line-clamp-1">{listing.location}</span>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
+            {/* Action Buttons - These act as z-index layers above the stretched link */}
+            <div className="flex items-center gap-2 relative z-10">
               {listing.contact_phone && (
                 <>
                   {/* WhatsApp Button */}
@@ -125,7 +126,7 @@ export function ListingCard({ listing }: ListingCardProps) {
                 </>
               )}
 
-              {/* View Details */}
+              {/* View Details - Removed secondary link since whole card is clickable, or make it z-10 if desired */}
               {!listing.contact_phone && (
                 <Button
                   asChild
